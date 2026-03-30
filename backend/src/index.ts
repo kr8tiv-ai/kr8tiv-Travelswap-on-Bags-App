@@ -3,4 +3,6 @@
 
 export { getConfig, loadConfig, resetConfig } from './config/index.js';
 export { logger } from './logger.js';
+export { Database, NodeSqliteConnection } from './services/Database.js';
+export type { DatabaseConnection, MigrationEntry } from './services/Database.js';
 export type * from './types/index.js';
