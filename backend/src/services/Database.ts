@@ -1,19 +1,27 @@
 // ─── Database Service ──────────────────────────────────────────
 // Wraps node:sqlite DatabaseSync with WAL mode, foreign keys,
 // and a numbered migration system.
+// The DatabaseConnection interface is async to support both
+// sync SQLite (via Promise-wrapped calls) and async PostgreSQL.
 
-import { DatabaseSync, type StatementSync, type StatementResultingChanges } from 'node:sqlite';
+import { DatabaseSync } from 'node:sqlite';
 import { logger } from '../logger.js';
 import { migrations } from './migrations/index.js';
+import { createDialect, type SqlDialect, type DialectName } from './dialect.js';
 
 // ─── Interfaces ────────────────────────────────────────────────
 
+/** Portable result from a write query (INSERT/UPDATE/DELETE). */
+export interface RunResult {
+  changes: number;
+  lastInsertRowid: number | bigint;
+}
+
 export interface DatabaseConnection {
-  run(sql: string, ...params: unknown[]): StatementResultingChanges;
-  get<T = unknown>(sql: string, ...params: unknown[]): T | undefined;
-  all<T = unknown>(sql: string, ...params: unknown[]): T[];
-  prepare(sql: string): StatementSync;
-  exec(sql: string): void;
+  run(sql: string, ...params: unknown[]): Promise<RunResult>;
+  get<T = unknown>(sql: string, ...params: unknown[]): Promise<T | undefined>;
+  all<T = unknown>(sql: string, ...params: unknown[]): Promise<T[]>;
+  exec(sql: string): Promise<void>;
 }
 
 // ─── NodeSqliteConnection ──────────────────────────────────────
@@ -21,26 +29,22 @@ export interface DatabaseConnection {
 export class NodeSqliteConnection implements DatabaseConnection {
   constructor(private readonly db: DatabaseSync) {}
 
-  run(sql: string, ...params: unknown[]): StatementResultingChanges {
+  async run(sql: string, ...params: unknown[]): Promise<RunResult> {
     const stmt = this.db.prepare(sql);
     return stmt.run(...params);
   }
 
-  get<T = unknown>(sql: string, ...params: unknown[]): T | undefined {
+  async get<T = unknown>(sql: string, ...params: unknown[]): Promise<T | undefined> {
     const stmt = this.db.prepare(sql);
     return stmt.get(...params) as T | undefined;
   }
 
-  all<T = unknown>(sql: string, ...params: unknown[]): T[] {
+  async all<T = unknown>(sql: string, ...params: unknown[]): Promise<T[]> {
     const stmt = this.db.prepare(sql);
     return stmt.all(...params) as T[];
   }
 
-  prepare(sql: string): StatementSync {
-    return this.db.prepare(sql);
-  }
-
-  exec(sql: string): void {
+  async exec(sql: string): Promise<void> {
     this.db.exec(sql);
   }
 }
@@ -49,7 +53,7 @@ export class NodeSqliteConnection implements DatabaseConnection {
 
 export interface MigrationEntry {
   name: string;
-  up: (conn: DatabaseConnection) => void;
+  up: (conn: DatabaseConnection, dialect: SqlDialect) => Promise<void>;
 }
 
 // ─── Database ──────────────────────────────────────────────────
@@ -61,16 +65,16 @@ export class Database {
   constructor(private readonly dbPath: string) {}
 
   /** Open the database and configure pragmas (WAL, FK). */
-  connect(): DatabaseConnection {
+  async connect(): Promise<DatabaseConnection> {
     if (this.conn) return this.conn;
 
     this.db = new DatabaseSync(this.dbPath);
     this.conn = new NodeSqliteConnection(this.db);
 
     // WAL mode for concurrent reads + write performance
-    this.conn.exec('PRAGMA journal_mode = WAL');
+    await this.conn.exec('PRAGMA journal_mode = WAL');
     // Enforce foreign key constraints
-    this.conn.exec('PRAGMA foreign_keys = ON');
+    await this.conn.exec('PRAGMA foreign_keys = ON');
 
     logger.info({ dbPath: this.dbPath }, 'Database connected');
     return this.conn;
@@ -85,21 +89,22 @@ export class Database {
   }
 
   /** Run all pending migrations in order. */
-  runMigrations(): void {
+  async runMigrations(dialectName: DialectName = 'sqlite'): Promise<void> {
     const conn = this.getConnection();
+    const dialect = createDialect(dialectName);
 
     // Create the schema_migrations tracking table
-    conn.exec(`
+    await conn.exec(`
       CREATE TABLE IF NOT EXISTS schema_migrations (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL UNIQUE,
-        applied_at TEXT NOT NULL DEFAULT (datetime('now'))
+        id ${dialect.autoId()},
+        name ${dialect.textType()} NOT NULL UNIQUE,
+        applied_at ${dialect.textType()} NOT NULL ${dialect.defaultNow()}
       )
     `);
 
     // Get already-applied migration names
-    const applied = conn
-      .all<{ name: string }>('SELECT name FROM schema_migrations ORDER BY id')
+    const applied = (await conn
+      .all<{ name: string }>('SELECT name FROM schema_migrations ORDER BY id'))
       .map((row) => row.name);
 
     const appliedSet = new Set(applied);
@@ -109,8 +114,8 @@ export class Database {
       if (appliedSet.has(migration.name)) continue;
 
       logger.info({ migration: migration.name }, 'Running migration');
-      migration.up(conn);
-      conn.run(
+      await migration.up(conn, dialect);
+      await conn.run(
         'INSERT INTO schema_migrations (name) VALUES (?)',
         migration.name,
       );

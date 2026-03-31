@@ -1,0 +1,35 @@
+# Dependencies (rebuilt in container)
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# Build output (rebuilt in container)
+dist/
+backend/dist/
+frontend/dist/
+
+# Project management
+.gsd/
+.git/
+.env
+.env.*
+!.env.example
+
+# Documentation
+*.md
+
+# Tests (not needed in production image)
+**/__tests__/
+**/*.test.ts
+**/*.spec.ts
+vitest.config.ts
+
+# IDE/Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db

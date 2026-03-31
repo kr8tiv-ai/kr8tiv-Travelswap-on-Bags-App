@@ -1,24 +1,25 @@
 import type { DatabaseConnection } from '../Database.js';
+import type { SqlDialect } from '../dialect.js';
 
 export const name = '002_create_runs';
 
-export function up(conn: DatabaseConnection): void {
-  conn.exec(`
+export async function up(conn: DatabaseConnection, d: SqlDialect): Promise<void> {
+  await conn.exec(`
     CREATE TABLE IF NOT EXISTS runs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      strategy_id INTEGER NOT NULL REFERENCES strategies(id) ON DELETE CASCADE,
-      phase TEXT NOT NULL DEFAULT 'PENDING',
-      status TEXT NOT NULL DEFAULT 'RUNNING',
-      claimed_sol REAL DEFAULT 0,
-      swapped_usdc REAL DEFAULT 0,
-      allocated_usd REAL DEFAULT 0,
-      credits_issued INTEGER DEFAULT 0,
-      gift_cards_purchased INTEGER DEFAULT 0,
-      claim_tx TEXT,
-      swap_tx TEXT,
-      error TEXT,
-      started_at TEXT NOT NULL DEFAULT (datetime('now')),
-      completed_at TEXT
+      id ${d.autoId()},
+      strategy_id ${d.intType()} NOT NULL REFERENCES strategies(id) ON DELETE CASCADE,
+      phase ${d.textType()} NOT NULL DEFAULT 'PENDING',
+      status ${d.textType()} NOT NULL DEFAULT 'RUNNING',
+      claimed_sol ${d.realType()} DEFAULT 0,
+      swapped_usdc ${d.realType()} DEFAULT 0,
+      allocated_usd ${d.realType()} DEFAULT 0,
+      credits_issued ${d.intType()} DEFAULT 0,
+      gift_cards_purchased ${d.intType()} DEFAULT 0,
+      claim_tx ${d.textType()},
+      swap_tx ${d.textType()},
+      error ${d.textType()},
+      started_at ${d.textType()} NOT NULL ${d.defaultNow()},
+      completed_at ${d.textType()}
     )
   `);
 }

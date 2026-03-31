@@ -35,6 +35,7 @@ const configSchema = z.object({
   giftCardDailyLimit: z.coerce.number().min(1).default(20),
   giftCardMaxDenomination: z.coerce.number().min(1).default(200),
   balanceMaxUsd: z.coerce.number().min(1).default(1000),
+  travelswapPartnerRef: z.string().default('FLIGHTBRAIN'),
 
   // ── Execution controls ──
   dryRun: z.coerce.boolean().default(false),
@@ -57,11 +58,18 @@ const configSchema = z.object({
   // ── Scheduling ──
   cronExpression: z.string().default('0 */6 * * *'),
 
+  // ── Duffel (optional — only required when flight search is used) ──
+  duffelApiToken: z.string().optional(),
+
+  // ── Static file serving ──
+  staticDir: z.string().optional(),
+
   // ── Server ──
   port: z.coerce.number().default(3001),
 
   // ── Database ──
   databasePath: z.string().default('./data/flightbrain.db'),
+  databaseUrl: z.string().url().optional(),
 
   // ── Logging & environment ──
   logLevel: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
@@ -104,7 +112,9 @@ export function loadConfig(): Config {
     giftCardDailyLimit: process.env.GIFT_CARD_DAILY_LIMIT,
     giftCardMaxDenomination: process.env.GIFT_CARD_MAX_DENOMINATION,
     balanceMaxUsd: process.env.BALANCE_MAX_USD,
+    travelswapPartnerRef: process.env.TRAVELSWAP_PARTNER_REF,
     dryRun: process.env.DRY_RUN,
+    duffelApiToken: parseEnvValue(process.env.DUFFEL_API_TOKEN),
     executionKillSwitch: process.env.EXECUTION_KILL_SWITCH,
     maxDailyRuns: process.env.MAX_DAILY_RUNS,
     maxClaimableSolPerRun: process.env.MAX_CLAIMABLE_SOL_PER_RUN,
@@ -117,8 +127,10 @@ export function loadConfig(): Config {
     cronExpression: process.env.CRON_EXPRESSION,
     port: process.env.PORT,
     databasePath: process.env.DATABASE_PATH,
+    databaseUrl: parseEnvValue(process.env.DATABASE_URL),
     logLevel: process.env.LOG_LEVEL,
     nodeEnv: process.env.NODE_ENV,
+    staticDir: process.env.STATIC_DIR,
     corsOrigins: process.env.CORS_ORIGINS ?? '',
   };
 

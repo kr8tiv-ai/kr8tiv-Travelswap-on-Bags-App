@@ -6,7 +6,18 @@
     "dev": "cd backend && npm run dev",
     "test": "cd backend && npx vitest run",
     "typecheck": "cd backend && npx tsc --noEmit",
+    "build:frontend": "cd frontend && npm run build",
     "dev:frontend": "cd frontend && npm run dev",
     "dev:backend": "cd backend && npm run dev"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.2"
+  },
+  "dependencies": {
+    "@duffel/api": "^4.21.6",
+    "@fastify/static": "^9.0.0",
+    "@types/pg": "^8.20.0",
+    "fastify-plugin": "^5.1.0",
+    "pg": "^8.20.0"
   }
 }

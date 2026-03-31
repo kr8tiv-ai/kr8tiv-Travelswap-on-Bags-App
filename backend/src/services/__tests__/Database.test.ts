@@ -8,9 +8,9 @@ describe('Database', () => {
   let db: Database;
   let conn: DatabaseConnection;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     db = new Database(IN_MEMORY);
-    conn = db.connect();
+    conn = await db.connect();
   });
 
   afterEach(() => {
@@ -18,16 +18,16 @@ describe('Database', () => {
   });
 
   describe('connect()', () => {
-    it('returns a usable connection', () => {
+    it('returns a usable connection', async () => {
       // Already connected in beforeEach
       expect(conn).toBeDefined();
       // Verify we can exec a basic query
-      const row = conn.get<{ result: number }>('SELECT 1 + 1 as result');
+      const row = await conn.get<{ result: number }>('SELECT 1 + 1 as result');
       expect(row?.result).toBe(2);
     });
 
-    it('returns same connection on repeated calls', () => {
-      const conn2 = db.connect();
+    it('returns same connection on repeated calls', async () => {
+      const conn2 = await db.connect();
       expect(conn2).toBe(conn);
     });
   });
@@ -44,34 +44,37 @@ describe('Database', () => {
   });
 
   describe('runMigrations()', () => {
-    beforeEach(() => {
-      db.runMigrations();
+    beforeEach(async () => {
+      await db.runMigrations();
     });
 
-    it('creates the schema_migrations tracking table', () => {
-      const table = conn.get<{ name: string }>(
+    it('creates the schema_migrations tracking table', async () => {
+      const table = await conn.get<{ name: string }>(
         "SELECT name FROM sqlite_master WHERE type='table' AND name='schema_migrations'",
       );
       expect(table).toBeDefined();
       expect(table?.name).toBe('schema_migrations');
     });
 
-    it('records all 5 migrations in schema_migrations', () => {
-      const rows = conn.all<{ name: string }>(
+    it('records all 8 migrations in schema_migrations', async () => {
+      const rows = await conn.all<{ name: string }>(
         'SELECT name FROM schema_migrations ORDER BY id',
       );
-      expect(rows).toHaveLength(5);
+      expect(rows).toHaveLength(8);
       expect(rows.map((r) => r.name)).toEqual([
         '001_create_strategies',
         '002_create_runs',
         '003_create_travel_balances',
         '004_create_gift_cards',
         '005_create_audit_log',
+        '006_add_strategy_columns',
+        '007_create_offer_requests',
+        '008_create_bookings',
       ]);
     });
 
-    it('creates the strategies table with correct columns', () => {
-      const cols = conn.all<{ name: string; type: string }>(
+    it('creates the strategies table with correct columns', async () => {
+      const cols = await conn.all<{ name: string; type: string }>(
         "PRAGMA table_info('strategies')",
       );
       const colNames = cols.map((c) => c.name);
@@ -87,8 +90,8 @@ describe('Database', () => {
       expect(colNames).toContain('updated_at');
     });
 
-    it('creates the runs table with correct columns', () => {
-      const cols = conn.all<{ name: string }>(
+    it('creates the runs table with correct columns', async () => {
+      const cols = await conn.all<{ name: string }>(
         "PRAGMA table_info('runs')",
       );
       const colNames = cols.map((c) => c.name);
@@ -104,8 +107,8 @@ describe('Database', () => {
       expect(colNames).toContain('completed_at');
     });
 
-    it('creates the travel_balances table with correct columns', () => {
-      const cols = conn.all<{ name: string }>(
+    it('creates the travel_balances table with correct columns', async () => {
+      const cols = await conn.all<{ name: string }>(
         "PRAGMA table_info('travel_balances')",
       );
       const colNames = cols.map((c) => c.name);
@@ -117,8 +120,8 @@ describe('Database', () => {
       expect(colNames).toContain('total_spent');
     });
 
-    it('creates the gift_cards table with correct columns', () => {
-      const cols = conn.all<{ name: string }>(
+    it('creates the gift_cards table with correct columns', async () => {
+      const cols = await conn.all<{ name: string }>(
         "PRAGMA table_info('gift_cards')",
       );
       const colNames = cols.map((c) => c.name);
@@ -131,8 +134,8 @@ describe('Database', () => {
       expect(colNames).toContain('status');
     });
 
-    it('creates the audit_log table with correct columns', () => {
-      const cols = conn.all<{ name: string }>(
+    it('creates the audit_log table with correct columns', async () => {
+      const cols = await conn.all<{ name: string }>(
         "PRAGMA table_info('audit_log')",
       );
       const colNames = cols.map((c) => c.name);
@@ -145,23 +148,25 @@ describe('Database', () => {
       expect(colNames).toContain('created_at');
     });
 
-    it('is idempotent — running twice does not fail or duplicate', () => {
+    it('is idempotent — running twice does not fail or duplicate', async () => {
       // Migrations already ran in beforeEach
-      db.runMigrations(); // second call
-      const rows = conn.all<{ name: string }>(
+      await db.runMigrations(); // second call
+      const rows = await conn.all<{ name: string }>(
         'SELECT name FROM schema_migrations ORDER BY id',
       );
-      expect(rows).toHaveLength(5);
+      expect(rows).toHaveLength(8);
     });
 
-    it('creates all 5 user tables plus schema_migrations', () => {
-      const tables = conn.all<{ name: string }>(
+    it('creates all 7 user tables plus schema_migrations', async () => {
+      const tables = await conn.all<{ name: string }>(
         "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name",
       );
       const tableNames = tables.map((t) => t.name).sort();
       expect(tableNames).toEqual([
         'audit_log',
+        'bookings',
         'gift_cards',
+        'offer_requests',
         'runs',
         'schema_migrations',
         'strategies',

@@ -1,5 +1,6 @@
 // ─── FlightBrain Domain Types ──────────────────────────────────
 // Adapted from PinkBrain Router types for the fee-to-travel-credits pipeline.
+// Extended with Duffel flight search types for M002.
 
 // ─── Bags API (shared with Router) ─────────────────────────────
 
@@ -290,4 +291,146 @@ export interface BagsAdapter {
   ): Promise<{ totalLamports: bigint; positions: ClaimablePosition[] }>;
 
   getRateLimitStatus(): BagsRateLimitInfo;
+}
+
+// ─── Duffel Flight Search Types ────────────────────────────────
+
+export type CabinClass = 'economy' | 'premium_economy' | 'business' | 'first';
+
+/** Parameters for searching flights via Duffel. */
+export interface FlightSearchParams {
+  /** IATA airport or city code for origin (e.g. "JFK", "LON") */
+  readonly origin: string;
+  /** IATA airport or city code for destination */
+  readonly destination: string;
+  /** ISO 8601 date string for outbound departure (YYYY-MM-DD) */
+  readonly departureDate: string;
+  /** ISO 8601 date string for return departure, omit for one-way */
+  readonly returnDate?: string;
+  /** Number of adult passengers (default 1) */
+  readonly passengers: number;
+  /** Desired cabin class (default "economy") */
+  readonly cabinClass?: CabinClass;
+}
+
+/** Simplified segment from Duffel offer slice. */
+export interface DuffelSegment {
+  readonly origin: string;
+  readonly destination: string;
+  readonly departingAt: string;
+  readonly arrivingAt: string;
+  readonly carrier: string;
+  readonly flightNumber: string;
+  readonly duration: string | null;
+  readonly aircraft: string | null;
+}
+
+/** Simplified slice from Duffel offer. */
+export interface DuffelSlice {
+  readonly origin: string;
+  readonly destination: string;
+  readonly duration: string | null;
+  readonly segments: DuffelSegment[];
+}
+
+/** Simplified offer from Duffel, containing only fields we surface to the user. */
+export interface DuffelOffer {
+  /** Duffel offer ID (e.g. "off_00009htYpSCXrwaB9DnUm0") */
+  readonly id: string;
+  /** Total price as a decimal string (e.g. "45.00") */
+  readonly totalAmount: string;
+  /** ISO 4217 currency code (e.g. "USD") */
+  readonly totalCurrency: string;
+  /** Airline name */
+  readonly owner: string;
+  /** Airline IATA code */
+  readonly ownerIata: string;
+  /** ISO 8601 datetime when the offer expires */
+  readonly expiresAt: string;
+  /** Flight slices (legs) */
+  readonly slices: DuffelSlice[];
+  /** Number of stops (total across all slices) */
+  readonly totalStops: number;
+  /** Cabin class */
+  readonly cabinClass: string;
+}
+
+/** Represents a Duffel offer request with its associated offers. */
+export interface DuffelOfferRequest {
+  /** Duffel offer request ID (e.g. "orq_00009hjdomFOCJyxHG7k7k") */
+  readonly requestId: string;
+  /** Offers returned from the request, sorted by totalAmount ascending */
+  readonly offers: DuffelOffer[];
+  /** When the cached result expires (ISO 8601) */
+  readonly expiresAt: string;
+  /** ISO 8601 datetime when the request was created */
+  readonly createdAt: string;
+}
+
+/** Cached offer result, wrapping an offer request with TTL metadata. */
+export interface CachedOfferResult {
+  readonly requestId: string;
+  readonly offers: DuffelOffer[];
+  readonly expiresAt: string;
+  readonly createdAt: string;
+  /** Whether this result was served from cache */
+  readonly cached: boolean;
+}
+
+// ─── Booking Types ─────────────────────────────────────────────
+
+export type BookingStatus = 'PENDING' | 'CONFIRMED' | 'FAILED';
+
+export interface PassengerDetails {
+  readonly givenName: string;
+  readonly familyName: string;
+  readonly bornOn: string;
+  readonly email: string;
+  readonly phoneNumber: string;
+  readonly gender: 'male' | 'female';
+}
+
+export interface CreateOrderParams {
+  readonly offerId: string;
+  readonly passengers: PassengerDetails[];
+  readonly amount: number;
+  readonly currency: string;
+  readonly metadata?: Record<string, string>;
+}
+
+export interface DuffelOrder {
+  readonly id: string;
+  readonly bookingReference: string;
+  readonly totalAmount: string;
+  readonly totalCurrency: string;
+  readonly passengers: PassengerDetails[];
+  readonly createdAt: string;
+}
+
+export interface Booking {
+  readonly id: string;
+  readonly strategyId: string;
+  readonly walletAddress: string;
+  readonly offerId: string;
+  readonly duffelOrderId: string | null;
+  readonly bookingReference: string | null;
+  readonly passengers: PassengerDetails[];
+  readonly amountUsd: number;
+  readonly currency: string;
+  readonly status: BookingStatus;
+  readonly errorMessage: string | null;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+/** DuffelClient interface for flight search and order operations. */
+export interface DuffelClientAdapter {
+  /** Search for flights and cache the results. */
+  searchFlights(params: FlightSearchParams): Promise<CachedOfferResult>;
+  /** Retrieve cached offers by request ID. Returns null if expired or not found. */
+  getCachedOffers(requestId: string): CachedOfferResult | null;
+  /** Clear all cached offers. */
+  clearCache(): void;
+  /** Create a Duffel order (book a flight). */
+  createOrder(params: CreateOrderParams): Promise<DuffelOrder>;
 }

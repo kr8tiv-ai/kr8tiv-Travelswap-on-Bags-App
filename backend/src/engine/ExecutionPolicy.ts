@@ -17,10 +17,10 @@ export interface PolicyResult {
 export interface ExecutionPolicy {
   isKillSwitchActive(): boolean;
   isDryRun(): boolean;
-  canStartRun(strategyId: number): PolicyResult;
+  canStartRun(strategyId: number): Promise<PolicyResult>;
   canExecutePhase(phase: RunState): PolicyResult;
-  canPurchaseGiftCard(strategyId: number, denominationUsd: number): PolicyResult;
-  canAllocateBalance(walletAddress: string, additionalAmount: number): PolicyResult;
+  canPurchaseGiftCard(strategyId: number, denominationUsd: number): Promise<PolicyResult>;
+  canAllocateBalance(walletAddress: string, additionalAmount: number): Promise<PolicyResult>;
 }
 
 // ─── Helpers ───────────────────────────────────────────────────
@@ -44,7 +44,7 @@ export function createExecutionPolicy(
       return config.dryRun;
     },
 
-    canStartRun(strategyId: number): PolicyResult {
+    async canStartRun(strategyId: number): Promise<PolicyResult> {
       // Kill switch blocks everything
       if (config.executionKillSwitch) {
         logger.warn({ strategyId }, 'Kill switch active — run blocked');
@@ -53,7 +53,7 @@ export function createExecutionPolicy(
 
       // Check daily run count for this strategy
       const today = todayUtc();
-      const row = conn.get<{ count: number }>(
+      const row = await conn.get<{ count: number }>(
         `SELECT COUNT(*) as count FROM runs
          WHERE strategy_id = ?
          AND started_at >= ?`,
@@ -83,7 +83,7 @@ export function createExecutionPolicy(
       return { allowed: true };
     },
 
-    canPurchaseGiftCard(strategyId: number, denominationUsd: number): PolicyResult {
+    async canPurchaseGiftCard(strategyId: number, denominationUsd: number): Promise<PolicyResult> {
       if (config.executionKillSwitch) {
         return { allowed: false, reason: 'Kill switch is active' };
       }
@@ -98,7 +98,7 @@ export function createExecutionPolicy(
 
       // Check daily gift card count for this strategy
       const today = todayUtc();
-      const row = conn.get<{ count: number }>(
+      const row = await conn.get<{ count: number }>(
         `SELECT COUNT(*) as count FROM gift_cards
          WHERE strategy_id = ?
          AND created_at >= ?`,
@@ -117,13 +117,13 @@ export function createExecutionPolicy(
       return { allowed: true };
     },
 
-    canAllocateBalance(walletAddress: string, additionalAmount: number): PolicyResult {
+    async canAllocateBalance(walletAddress: string, additionalAmount: number): Promise<PolicyResult> {
       if (config.executionKillSwitch) {
         return { allowed: false, reason: 'Kill switch is active' };
       }
 
       // Sum current balance across all strategies for this wallet
-      const row = conn.get<{ total: number | null }>(
+      const row = await conn.get<{ total: number | null }>(
         `SELECT SUM(balance_usd) as total FROM travel_balances
          WHERE wallet_address = ?`,
         walletAddress,

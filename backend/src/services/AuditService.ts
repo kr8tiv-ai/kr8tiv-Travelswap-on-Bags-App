@@ -26,27 +26,27 @@ export interface AuditService {
     action: string,
     details?: Record<string, unknown>,
     txSignature?: string,
-  ): AuditEntry;
+  ): Promise<AuditEntry>;
 
-  getByRunId(runId: number): AuditEntry[];
+  getByRunId(runId: number): Promise<AuditEntry[]>;
 
-  getLatest(limit?: number): AuditEntry[];
+  getLatest(limit?: number): Promise<AuditEntry[]>;
 }
 
 // ─── Factory ───────────────────────────────────────────────────
 
 export function createAuditService(conn: DatabaseConnection): AuditService {
   return {
-    logTransition(
+    async logTransition(
       runId: number,
       phase: RunState,
       action: string,
       details?: Record<string, unknown>,
       txSignature?: string,
-    ): AuditEntry {
+    ): Promise<AuditEntry> {
       const detailsJson = details ? JSON.stringify(details) : null;
 
-      const result = conn.run(
+      const result = await conn.run(
         `INSERT INTO audit_log (run_id, phase, action, details, tx_signature)
          VALUES (?, ?, ?, ?, ?)`,
         runId,
@@ -56,7 +56,7 @@ export function createAuditService(conn: DatabaseConnection): AuditService {
         txSignature ?? null,
       );
 
-      const entry = conn.get<AuditEntry>(
+      const entry = await conn.get<AuditEntry>(
         'SELECT * FROM audit_log WHERE id = ?',
         result.lastInsertRowid,
       );
@@ -73,14 +73,14 @@ export function createAuditService(conn: DatabaseConnection): AuditService {
       return entry;
     },
 
-    getByRunId(runId: number): AuditEntry[] {
+    async getByRunId(runId: number): Promise<AuditEntry[]> {
       return conn.all<AuditEntry>(
         'SELECT * FROM audit_log WHERE run_id = ? ORDER BY created_at ASC, id ASC',
         runId,
       );
     },
 
-    getLatest(limit = 50): AuditEntry[] {
+    async getLatest(limit = 50): Promise<AuditEntry[]> {
       return conn.all<AuditEntry>(
         'SELECT * FROM audit_log ORDER BY created_at DESC, id DESC LIMIT ?',
         limit,

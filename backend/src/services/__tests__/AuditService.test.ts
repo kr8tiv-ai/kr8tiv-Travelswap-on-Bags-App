@@ -9,20 +9,20 @@ describe('AuditService', () => {
   let strategyId: number;
   let runId: number;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     db = new Database(':memory:');
-    conn = db.connect();
-    db.runMigrations();
+    conn = await db.connect();
+    await db.runMigrations();
     audit = createAuditService(conn);
 
     // Insert a strategy and a run for FK constraints
-    conn.run(
+    await conn.run(
       "INSERT INTO strategies (token_mint) VALUES (?)",
       'So11111111111111111111111111111111111111112',
     );
     strategyId = 1;
 
-    conn.run(
+    await conn.run(
       "INSERT INTO runs (strategy_id, phase, status) VALUES (?, ?, ?)",
       strategyId, 'PENDING', 'RUNNING',
     );
@@ -34,8 +34,8 @@ describe('AuditService', () => {
   });
 
   describe('logTransition()', () => {
-    it('inserts an audit entry and returns it', () => {
-      const entry = audit.logTransition(runId, 'CLAIMING', 'start_claim');
+    it('inserts an audit entry and returns it', async () => {
+      const entry = await audit.logTransition(runId, 'CLAIMING', 'start_claim');
 
       expect(entry.id).toBe(1);
       expect(entry.run_id).toBe(runId);
@@ -44,15 +44,15 @@ describe('AuditService', () => {
       expect(entry.created_at).toBeTruthy();
     });
 
-    it('stores details as JSON', () => {
+    it('stores details as JSON', async () => {
       const details = { amount: 1.5, source: 'test' };
-      const entry = audit.logTransition(runId, 'SWAPPING', 'swap_executed', details);
+      const entry = await audit.logTransition(runId, 'SWAPPING', 'swap_executed', details);
 
       expect(entry.details).toBe(JSON.stringify(details));
     });
 
-    it('stores tx_signature when provided', () => {
-      const entry = audit.logTransition(
+    it('stores tx_signature when provided', async () => {
+      const entry = await audit.logTransition(
         runId, 'CLAIMING', 'claim_success',
         { claimed: 5 },
         'abc123txsig',
@@ -61,61 +61,61 @@ describe('AuditService', () => {
       expect(entry.tx_signature).toBe('abc123txsig');
     });
 
-    it('sets tx_signature to null when omitted', () => {
-      const entry = audit.logTransition(runId, 'PENDING', 'init');
+    it('sets tx_signature to null when omitted', async () => {
+      const entry = await audit.logTransition(runId, 'PENDING', 'init');
 
       expect(entry.tx_signature).toBeNull();
     });
 
-    it('sets details to null when omitted', () => {
-      const entry = audit.logTransition(runId, 'PENDING', 'init');
+    it('sets details to null when omitted', async () => {
+      const entry = await audit.logTransition(runId, 'PENDING', 'init');
 
       expect(entry.details).toBeNull();
     });
   });
 
   describe('getByRunId()', () => {
-    it('returns entries for a specific run ordered by created_at', () => {
-      audit.logTransition(runId, 'PENDING', 'init');
-      audit.logTransition(runId, 'CLAIMING', 'start_claim');
-      audit.logTransition(runId, 'SWAPPING', 'swap_start');
+    it('returns entries for a specific run ordered by created_at', async () => {
+      await audit.logTransition(runId, 'PENDING', 'init');
+      await audit.logTransition(runId, 'CLAIMING', 'start_claim');
+      await audit.logTransition(runId, 'SWAPPING', 'swap_start');
 
-      const entries = audit.getByRunId(runId);
+      const entries = await audit.getByRunId(runId);
       expect(entries).toHaveLength(3);
       expect(entries[0].action).toBe('init');
       expect(entries[1].action).toBe('start_claim');
       expect(entries[2].action).toBe('swap_start');
     });
 
-    it('returns empty array for unknown runId', () => {
-      const entries = audit.getByRunId(999);
+    it('returns empty array for unknown runId', async () => {
+      const entries = await audit.getByRunId(999);
       expect(entries).toEqual([]);
     });
 
-    it('does not return entries from other runs', () => {
+    it('does not return entries from other runs', async () => {
       // Create second run
-      conn.run(
+      await conn.run(
         "INSERT INTO runs (strategy_id, phase, status) VALUES (?, ?, ?)",
         strategyId, 'PENDING', 'RUNNING',
       );
       const run2Id = 2;
 
-      audit.logTransition(runId, 'PENDING', 'run1_action');
-      audit.logTransition(run2Id, 'PENDING', 'run2_action');
+      await audit.logTransition(runId, 'PENDING', 'run1_action');
+      await audit.logTransition(run2Id, 'PENDING', 'run2_action');
 
-      const run1Entries = audit.getByRunId(runId);
+      const run1Entries = await audit.getByRunId(runId);
       expect(run1Entries).toHaveLength(1);
       expect(run1Entries[0].action).toBe('run1_action');
     });
   });
 
   describe('getLatest()', () => {
-    it('returns entries in reverse chronological order', () => {
-      audit.logTransition(runId, 'PENDING', 'first');
-      audit.logTransition(runId, 'CLAIMING', 'second');
-      audit.logTransition(runId, 'SWAPPING', 'third');
+    it('returns entries in reverse chronological order', async () => {
+      await audit.logTransition(runId, 'PENDING', 'first');
+      await audit.logTransition(runId, 'CLAIMING', 'second');
+      await audit.logTransition(runId, 'SWAPPING', 'third');
 
-      const entries = audit.getLatest(10);
+      const entries = await audit.getLatest(10);
       expect(entries).toHaveLength(3);
       // Reverse order (latest first)
       expect(entries[0].action).toBe('third');
@@ -123,18 +123,18 @@ describe('AuditService', () => {
       expect(entries[2].action).toBe('first');
     });
 
-    it('respects the limit parameter', () => {
-      audit.logTransition(runId, 'PENDING', 'a');
-      audit.logTransition(runId, 'CLAIMING', 'b');
-      audit.logTransition(runId, 'SWAPPING', 'c');
+    it('respects the limit parameter', async () => {
+      await audit.logTransition(runId, 'PENDING', 'a');
+      await audit.logTransition(runId, 'CLAIMING', 'b');
+      await audit.logTransition(runId, 'SWAPPING', 'c');
 
-      const entries = audit.getLatest(2);
+      const entries = await audit.getLatest(2);
       expect(entries).toHaveLength(2);
     });
 
-    it('defaults to limit of 50', () => {
+    it('defaults to limit of 50', async () => {
       // Just verify it doesn't throw with no arg
-      const entries = audit.getLatest();
+      const entries = await audit.getLatest();
       expect(entries).toHaveLength(0);
     });
   });

@@ -1,18 +1,19 @@
 import type { DatabaseConnection } from '../Database.js';
+import type { SqlDialect } from '../dialect.js';
 
 export const name = '003_create_travel_balances';
 
-export function up(conn: DatabaseConnection): void {
-  conn.exec(`
+export async function up(conn: DatabaseConnection, d: SqlDialect): Promise<void> {
+  await conn.exec(`
     CREATE TABLE IF NOT EXISTS travel_balances (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      strategy_id INTEGER NOT NULL REFERENCES strategies(id) ON DELETE CASCADE,
-      wallet_address TEXT NOT NULL,
-      balance_usd REAL DEFAULT 0,
-      total_earned REAL DEFAULT 0,
-      total_spent REAL DEFAULT 0,
-      created_at TEXT NOT NULL DEFAULT (datetime('now')),
-      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      id ${d.autoId()},
+      strategy_id ${d.intType()} NOT NULL REFERENCES strategies(id) ON DELETE CASCADE,
+      wallet_address ${d.textType()} NOT NULL,
+      balance_usd ${d.realType()} DEFAULT 0,
+      total_earned ${d.realType()} DEFAULT 0,
+      total_spent ${d.realType()} DEFAULT 0,
+      created_at ${d.textType()} NOT NULL ${d.defaultNow()},
+      updated_at ${d.textType()} NOT NULL ${d.defaultNow()},
       UNIQUE(strategy_id, wallet_address)
     )
   `);

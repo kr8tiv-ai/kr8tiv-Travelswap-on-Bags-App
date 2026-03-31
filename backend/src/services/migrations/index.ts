@@ -5,6 +5,9 @@ import * as m002 from './002_create_runs.js';
 import * as m003 from './003_create_travel_balances.js';
 import * as m004 from './004_create_gift_cards.js';
 import * as m005 from './005_create_audit_log.js';
+import * as m006 from './006_add_strategy_columns.js';
+import * as m007 from './007_create_offer_requests.js';
+import * as m008 from './008_create_bookings.js';
 
 /** Ordered list of all database migrations. */
 export const migrations: MigrationEntry[] = [
@@ -13,4 +16,7 @@ export const migrations: MigrationEntry[] = [
   m003,
   m004,
   m005,
+  m006,
+  m007,
+  m008,
 ];
