@@ -16,7 +16,7 @@ DeFi / Travel
 
 FlightBrain automates the conversion of Bags.fm trading fees into real-world travel. An automated 5-phase pipeline claims accrued SOL fees from Meteora vaults, swaps to USDC via the Bags trade API, distributes across token holders, and purchases travel credits or books flights directly — no out-of-pocket spending required.
 
-Built as the third app in the PinkBrain ecosystem for the Bags.fm App Store, FlightBrain bridges DeFi yield and real-world utility. Token holders earn travel credits proportional to their holdings, which can be redeemed for gift cards or used to search and book flights from 300+ airlines through the Duffel API. The entire pipeline is checkpointed — if a run fails mid-process, it resumes from where it left off.
+Built for the Bags.fm App Store, kr8tiv TravelSwap bridges DeFi yield and real-world utility. Token holders earn travel credits proportional to their holdings, which can be redeemed for gift cards or used to search and book flights from 300+ airlines through the Duffel API. The entire pipeline is checkpointed — if a run fails mid-process, it resumes from where it left off.
 
 FlightBrain is designed for token creators and DAOs who want to offer their communities tangible benefits from DeFi activity. Configure a strategy, set distribution rules, and let the pipeline run on a schedule — holders see travel credits appear in their balances automatically.
 
@@ -74,23 +74,21 @@ Dashboard screenshots captured from the FlightBrain monitoring interface:
 
 | Resource | URL |
 |----------|-----|
-| GitHub Repository | [github.com/kr8tiv-ai/kr8tiv-Travelswap](https://github.com/kr8tiv-ai/kr8tiv-Travelswap) |
+| GitHub Repository | [github.com/kr8tiv-ai/kr8tiv-Travelswap-on-Bags-App](https://github.com/kr8tiv-ai/kr8tiv-Travelswap-on-Bags-App) |
 | Documentation | See [README.md](../README.md) |
 | TravelSwap Platform | [travelswap.xyz](https://travelswap.xyz) |
 | Duffel API | [duffel.com/docs](https://duffel.com/docs) |
 | Bags.fm Platform | [bags.fm](https://bags.fm) |
 
-## PinkBrain Ecosystem
+## kr8tiv Ecosystem
 
-FlightBrain is the third application in the PinkBrain family, built for the Bags.fm App Store. Each app converts Bags.fm trading fees into a different form of real-world utility:
+kr8tiv TravelSwap on Bags is part of the kr8tiv suite of Bags.fm App Store applications. Each app converts trading fees into a different form of real-world utility:
 
 | App | What It Does | Output |
 |-----|-------------|--------|
-| [PinkBrain LP](https://github.com/kr8tiv-ai/PinkBrain-lp) | Fees → Permanently locked Meteora liquidity | On-chain LP positions |
-| [PinkBrain Router](https://github.com/kr8tiv-ai/PinkBrain-Router) | Fees → OpenRouter API credits + per-user keys | 300+ AI model access |
-| **FlightBrain** (this app) | Fees → Travel credits + flight bookings | Flights, hotels, travel |
+| **kr8tiv TravelSwap** (this app) | Fees → Travel credits + flight bookings | Flights, hotels, travel |
 
-The ecosystem demonstrates three distinct use cases for automated DeFi fee reinvestment, all built on the same Bags.fm App Store infrastructure.
+The platform demonstrates automated DeFi fee reinvestment into tangible value, built on the Bags.fm App Store infrastructure.
 
 ## Hackathon Submission Notes
 
