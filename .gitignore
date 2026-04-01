@@ -62,3 +62,8 @@ venv/
 target/
 vendor/
 .cache/
+ 
+# Local data 
+data/ 
+_list.js 
+nul 
