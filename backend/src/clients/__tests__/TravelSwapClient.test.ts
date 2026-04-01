@@ -74,13 +74,51 @@ describe('TravelSwapClient', () => {
     });
   });
 
+  // ─── getHotelSearchUrl() ──────────────────────────────────────
+
+  describe('getHotelSearchUrl()', () => {
+    it('generates search URL with default FLIGHTBRAIN ref and no destination', () => {
+      const client = createTravelSwapClient();
+      const url = client.getHotelSearchUrl();
+
+      expect(url).toBe('https://travelswap.xyz/search?ref=FLIGHTBRAIN');
+    });
+
+    it('includes destination param when provided', () => {
+      const client = createTravelSwapClient();
+      const url = client.getHotelSearchUrl('Cancun');
+
+      const parsed = new URL(url);
+      expect(parsed.searchParams.get('ref')).toBe('FLIGHTBRAIN');
+      expect(parsed.searchParams.get('destination')).toBe('Cancun');
+    });
+
+    it('URL-encodes special characters in destination', () => {
+      const client = createTravelSwapClient();
+      const url = client.getHotelSearchUrl('New York');
+
+      const parsed = new URL(url);
+      expect(parsed.searchParams.get('destination')).toBe('New York');
+      // URLSearchParams encodes space as +
+      expect(url).toContain('destination=New+York');
+    });
+
+    it('uses custom partnerRef', () => {
+      const client = createTravelSwapClient('HOTEL_PARTNER');
+      const url = client.getHotelSearchUrl('Tokyo');
+
+      expect(url).toContain('ref=HOTEL_PARTNER');
+      expect(url).not.toContain('FLIGHTBRAIN');
+    });
+  });
+
   // ─── Service interface ─────────────────────────────────────
 
   describe('service interface', () => {
     it('exposes exactly the expected methods', () => {
       const client = createTravelSwapClient();
       const methods = Object.keys(client).sort();
-      expect(methods).toEqual(['getBookingUrl', 'getGiftCardUrl']);
+      expect(methods).toEqual(['getBookingUrl', 'getGiftCardUrl', 'getHotelSearchUrl']);
     });
   });
 });

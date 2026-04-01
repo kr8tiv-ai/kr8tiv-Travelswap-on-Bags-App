@@ -35,6 +35,7 @@ function makeConfig(overrides: Partial<Config> = {}): Config {
     executionKillSwitch: false,
     maxDailyRuns: 10,
     maxClaimableSolPerRun: 100,
+    minIntervalMinutes: 60,
     feeThresholdSol: 5,
     feeSource: 'CLAIMABLE_POSITIONS',
     swapSlippageBps: 50,
@@ -181,6 +182,7 @@ describe('PipelineEngine', () => {
     travelBalanceService = createTravelBalanceService(conn);
 
     mockGiftCardService = {
+      getById: vi.fn().mockResolvedValue(undefined),
       purchase: vi.fn().mockImplementation(async (_sId, _rId, wallet, denom, code) => ({
         giftCardId: '1',
         strategyId: String(_sId),

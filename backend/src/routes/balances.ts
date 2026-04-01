@@ -3,6 +3,7 @@
 
 import type { FastifyInstance } from 'fastify';
 import type { RouteDeps } from './types.js';
+import { sendError } from './errors.js';
 
 async function balancesRoutes(
   app: FastifyInstance,
@@ -15,13 +16,13 @@ async function balancesRoutes(
     const { strategyId } = request.query as { strategyId?: string };
 
     if (!strategyId) {
-      reply.status(400).send({ error: 'strategyId query parameter is required' });
+      sendError(reply, 400, 'strategyId query parameter is required');
       return;
     }
 
     const numId = Number(strategyId);
     if (isNaN(numId)) {
-      reply.status(400).send({ error: 'Invalid strategyId' });
+      sendError(reply, 400, 'Invalid strategyId');
       return;
     }
 
@@ -34,19 +35,19 @@ async function balancesRoutes(
     const { strategyId } = request.query as { strategyId?: string };
 
     if (!strategyId) {
-      reply.status(400).send({ error: 'strategyId query parameter is required' });
+      sendError(reply, 400, 'strategyId query parameter is required');
       return;
     }
 
     const numId = Number(strategyId);
     if (isNaN(numId)) {
-      reply.status(400).send({ error: 'Invalid strategyId' });
+      sendError(reply, 400, 'Invalid strategyId');
       return;
     }
 
     const balance = await travelBalanceService.getByStrategyAndWallet(numId, wallet);
     if (!balance) {
-      reply.status(404).send({ error: 'Balance not found' });
+      sendError(reply, 404, 'Balance not found');
       return;
     }
 

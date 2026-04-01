@@ -55,6 +55,7 @@ function makeStrategy(overrides: Partial<TravelStrategy> = {}): TravelStrategy {
     giftCardThresholdUsd: 25,
     cronExpression: '0 */6 * * *',
     enabled: true,
+    customAllocations: null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     lastRunId: null,
@@ -147,8 +148,11 @@ describe('allocatePhase', () => {
   // ─── Missing dependencies ───────────────────────────────
 
   describe('missing dependencies', () => {
-    it('returns error when helius is missing', async () => {
-      const ctx = makeCtx({ travelBalanceService: balanceSvc });
+    it('returns error when helius is missing for holder-based modes', async () => {
+      const ctx = makeCtx({
+        strategy: makeStrategy({ distributionMode: 'EQUAL_SPLIT' }),
+        travelBalanceService: balanceSvc,
+      });
       const result = await allocatePhase(ctx);
 
       expect(result.success).toBe(false);
@@ -327,13 +331,48 @@ describe('allocatePhase', () => {
     });
   });
 
-  // ─── CUSTOM_LIST (fallback) ─────────────────────────────
+  // ─── CUSTOM_LIST ─────────────────────────────────────────
 
   describe('CUSTOM_LIST mode', () => {
-    it('falls back to OWNER_ONLY with warning', async () => {
+    it('distributes USDC by percentage to custom wallets (50/30/20)', async () => {
       const helius = mockHelius();
       const ctx = makeCtx({
-        strategy: makeStrategy({ distributionMode: 'CUSTOM_LIST' }),
+        strategy: makeStrategy({
+          distributionMode: 'CUSTOM_LIST',
+          customAllocations: [
+            { wallet: HOLDER_A, percentage: 50 },
+            { wallet: HOLDER_B, percentage: 30 },
+            { wallet: HOLDER_C, percentage: 20 },
+          ],
+        }),
+        helius,
+        travelBalanceService: balanceSvc,
+      });
+
+      const result = await allocatePhase(ctx);
+
+      expect(result.success).toBe(true);
+      expect(result.data?.allocatedUsd).toBe(100);
+      expect(result.data?.holderCount).toBe(3);
+
+      const balA = await balanceSvc.getByStrategyAndWallet(1, HOLDER_A);
+      const balB = await balanceSvc.getByStrategyAndWallet(1, HOLDER_B);
+      const balC = await balanceSvc.getByStrategyAndWallet(1, HOLDER_C);
+      expect(balA!.balanceUsd).toBe(50);
+      expect(balB!.balanceUsd).toBe(30);
+      expect(balC!.balanceUsd).toBe(20);
+
+      // HeliusClient should NOT be called for CUSTOM_LIST
+      expect(helius.getTopHolders).not.toHaveBeenCalled();
+    });
+
+    it('falls back to OWNER_ONLY when customAllocations is null', async () => {
+      const helius = mockHelius();
+      const ctx = makeCtx({
+        strategy: makeStrategy({
+          distributionMode: 'CUSTOM_LIST',
+          customAllocations: null,
+        }),
         helius,
         travelBalanceService: balanceSvc,
       });
@@ -346,9 +385,106 @@ describe('allocatePhase', () => {
 
       const balance = await balanceSvc.getByStrategyAndWallet(1, OWNER);
       expect(balance!.balanceUsd).toBe(100);
-
-      // HeliusClient should NOT be called for CUSTOM_LIST
       expect(helius.getTopHolders).not.toHaveBeenCalled();
+    });
+
+    it('falls back to OWNER_ONLY when customAllocations is empty array', async () => {
+      const helius = mockHelius();
+      const ctx = makeCtx({
+        strategy: makeStrategy({
+          distributionMode: 'CUSTOM_LIST',
+          customAllocations: [],
+        }),
+        helius,
+        travelBalanceService: balanceSvc,
+      });
+
+      const result = await allocatePhase(ctx);
+
+      expect(result.success).toBe(true);
+      expect(result.data?.allocatedUsd).toBe(100);
+      expect(result.data?.holderCount).toBe(1);
+
+      const balance = await balanceSvc.getByStrategyAndWallet(1, OWNER);
+      expect(balance!.balanceUsd).toBe(100);
+      expect(helius.getTopHolders).not.toHaveBeenCalled();
+    });
+
+    it('allocates 100% to single wallet', async () => {
+      const helius = mockHelius();
+      const ctx = makeCtx({
+        strategy: makeStrategy({
+          distributionMode: 'CUSTOM_LIST',
+          customAllocations: [
+            { wallet: HOLDER_A, percentage: 100 },
+          ],
+        }),
+        helius,
+        travelBalanceService: balanceSvc,
+      });
+
+      const result = await allocatePhase(ctx);
+
+      expect(result.success).toBe(true);
+      expect(result.data?.allocatedUsd).toBe(100);
+      expect(result.data?.holderCount).toBe(1);
+
+      const balance = await balanceSvc.getByStrategyAndWallet(1, HOLDER_A);
+      expect(balance!.balanceUsd).toBe(100);
+      expect(helius.getTopHolders).not.toHaveBeenCalled();
+    });
+
+    it('distributes 60/40 split correctly', async () => {
+      const helius = mockHelius();
+      const ctx = makeCtx({
+        run: makeRun({ swappedUsdc: 200 }),
+        strategy: makeStrategy({
+          distributionMode: 'CUSTOM_LIST',
+          customAllocations: [
+            { wallet: HOLDER_A, percentage: 60 },
+            { wallet: HOLDER_B, percentage: 40 },
+          ],
+        }),
+        helius,
+        travelBalanceService: balanceSvc,
+      });
+
+      const result = await allocatePhase(ctx);
+
+      expect(result.success).toBe(true);
+      expect(result.data?.allocatedUsd).toBe(200);
+      expect(result.data?.holderCount).toBe(2);
+
+      const balA = await balanceSvc.getByStrategyAndWallet(1, HOLDER_A);
+      const balB = await balanceSvc.getByStrategyAndWallet(1, HOLDER_B);
+      expect(balA!.balanceUsd).toBe(120);
+      expect(balB!.balanceUsd).toBe(80);
+      expect(helius.getTopHolders).not.toHaveBeenCalled();
+    });
+
+    it('works without HeliusClient in context', async () => {
+      const ctx = makeCtx({
+        strategy: makeStrategy({
+          distributionMode: 'CUSTOM_LIST',
+          customAllocations: [
+            { wallet: HOLDER_A, percentage: 50 },
+            { wallet: HOLDER_B, percentage: 50 },
+          ],
+        }),
+        // No helius provided
+        travelBalanceService: balanceSvc,
+      });
+
+      const result = await allocatePhase(ctx);
+
+      expect(result.success).toBe(true);
+      expect(result.data?.allocatedUsd).toBe(100);
+      expect(result.data?.holderCount).toBe(2);
+
+      const balA = await balanceSvc.getByStrategyAndWallet(1, HOLDER_A);
+      const balB = await balanceSvc.getByStrategyAndWallet(1, HOLDER_B);
+      expect(balA!.balanceUsd).toBe(50);
+      expect(balB!.balanceUsd).toBe(50);
     });
   });
 

@@ -225,4 +225,50 @@ describe('RunService', () => {
       expect(ids[1]).toBeGreaterThan(ids[2]);
     });
   });
+
+  describe('getIncomplete()', () => {
+    it('returns runs with status RUNNING', async () => {
+      const run = await runs.create(strategyId);
+      // create() sets status='RUNNING', so it should appear
+      const incomplete = await runs.getIncomplete();
+      expect(incomplete).toHaveLength(1);
+      expect(incomplete[0].runId).toBe(run.runId);
+      expect(incomplete[0].status).toBe('RUNNING');
+    });
+
+    it('excludes completed and failed runs', async () => {
+      const run1 = await runs.create(strategyId);
+      const run2 = await runs.create(strategyId);
+      const run3 = await runs.create(strategyId);
+
+      await runs.markComplete(Number(run1.runId));
+      await runs.markFailed(Number(run2.runId), 'some error');
+      // run3 stays RUNNING
+
+      const incomplete = await runs.getIncomplete();
+      expect(incomplete).toHaveLength(1);
+      expect(incomplete[0].runId).toBe(run3.runId);
+    });
+
+    it('returns empty array when no incomplete runs exist', async () => {
+      const run = await runs.create(strategyId);
+      await runs.markComplete(Number(run.runId));
+
+      const incomplete = await runs.getIncomplete();
+      expect(incomplete).toEqual([]);
+    });
+
+    it('returns runs ordered by started_at ASC (oldest first)', async () => {
+      // Create 3 RUNNING runs
+      const r1 = await runs.create(strategyId);
+      const r2 = await runs.create(strategyId);
+      const r3 = await runs.create(strategyId);
+
+      const incomplete = await runs.getIncomplete();
+      expect(incomplete).toHaveLength(3);
+      // Oldest first
+      expect(incomplete[0].runId).toBe(r1.runId);
+      expect(incomplete[2].runId).toBe(r3.runId);
+    });
+  });
 });

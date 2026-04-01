@@ -6,6 +6,7 @@
 import cron, { type ScheduledTask } from 'node-cron';
 import { logger } from '../logger.js';
 import type { StrategyService } from './StrategyService.js';
+import type { RunService } from './RunService.js';
 import type { PipelineEngine } from '../engine/types.js';
 import type { ExecutionPolicy } from '../engine/ExecutionPolicy.js';
 import type { RunLock } from '../engine/RunLock.js';
@@ -27,6 +28,7 @@ export interface SchedulerService {
 
 export interface SchedulerDeps {
   strategyService: StrategyService;
+  runService: RunService;
   pipelineEngine: PipelineEngine;
   executionPolicy: ExecutionPolicy;
   runLock: RunLock;
@@ -35,7 +37,7 @@ export interface SchedulerDeps {
 // ─── Factory ───────────────────────────────────────────────────
 
 export function createSchedulerService(deps: SchedulerDeps): SchedulerService {
-  const { strategyService, pipelineEngine, executionPolicy, runLock } = deps;
+  const { strategyService, runService, pipelineEngine, executionPolicy, runLock } = deps;
   const log = logger.child({ component: 'SchedulerService' });
   const scheduledTasks: ScheduledTask[] = [];
 
@@ -101,9 +103,47 @@ export function createSchedulerService(deps: SchedulerDeps): SchedulerService {
     scheduledTasks.length = 0;
   }
 
+  async function recoverIncompleteRuns(): Promise<number> {
+    const incomplete = await runService.getIncomplete();
+    let recovered = 0;
+
+    for (const run of incomplete) {
+      const runId = Number(run.runId);
+      const strategyId = Number(run.strategyId);
+
+      if (!runLock.acquire(strategyId)) {
+        log.warn({ runId, strategyId }, 'Cannot recover run — strategy locked');
+        continue;
+      }
+
+      try {
+        log.info({ runId, strategyId, phase: run.phase }, 'Recovering incomplete run');
+        await pipelineEngine.resumeRun(runId);
+        recovered++;
+        log.info({ runId, strategyId }, 'Incomplete run recovered');
+      } catch (err) {
+        log.error(
+          { runId, strategyId, error: (err as Error).message },
+          'Failed to recover incomplete run',
+        );
+      } finally {
+        runLock.release(strategyId);
+      }
+    }
+
+    return recovered;
+  }
+
   return {
     async start(): Promise<void> {
       log.info('Starting scheduler');
+
+      // Recover incomplete runs before scheduling new ones
+      const recovered = await recoverIncompleteRuns();
+      if (recovered > 0) {
+        log.info({ recovered }, 'Recovered incomplete runs');
+      }
+
       await scheduleActiveStrategies();
       log.info({ count: scheduledTasks.length }, 'Scheduler started');
     },

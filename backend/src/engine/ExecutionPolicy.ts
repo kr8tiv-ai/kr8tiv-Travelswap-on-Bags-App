@@ -29,12 +29,22 @@ function todayUtc(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+// ─── Factory Options ───────────────────────────────────────────
+
+export interface ExecutionPolicyOptions {
+  /** Injectable clock for deterministic testing (K022). Defaults to Date.now. */
+  nowFn?: () => number;
+}
+
 // ─── Factory ───────────────────────────────────────────────────
 
 export function createExecutionPolicy(
   config: Config,
   conn: DatabaseConnection,
+  options?: ExecutionPolicyOptions,
 ): ExecutionPolicy {
+  const nowFn = options?.nowFn ?? (() => Date.now());
+
   return {
     isKillSwitchActive(): boolean {
       return config.executionKillSwitch;
@@ -71,6 +81,35 @@ export function createExecutionPolicy(
           allowed: false,
           reason: `Daily run limit reached (${dailyCount}/${config.maxDailyRuns})`,
         };
+      }
+
+      // Check minimum interval since last run
+      if (config.minIntervalMinutes > 0) {
+        const lastRun = await conn.get<{ started_at: string }>(
+          `SELECT started_at FROM runs
+           WHERE strategy_id = ?
+           ORDER BY started_at DESC, id DESC
+           LIMIT 1`,
+          strategyId,
+        );
+
+        if (lastRun) {
+          const lastStartMs = new Date(lastRun.started_at).getTime();
+          const elapsedMs = nowFn() - lastStartMs;
+          const minIntervalMs = config.minIntervalMinutes * 60 * 1000;
+
+          if (elapsedMs < minIntervalMs) {
+            const remainingMin = Math.ceil((minIntervalMs - elapsedMs) / 60000);
+            logger.warn(
+              { strategyId, elapsedMs, minIntervalMs, remainingMin },
+              'Minimum interval not elapsed',
+            );
+            return {
+              allowed: false,
+              reason: `Minimum interval not elapsed (${remainingMin}min remaining)`,
+            };
+          }
+        }
       }
 
       return { allowed: true };

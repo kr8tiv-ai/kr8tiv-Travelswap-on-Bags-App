@@ -93,6 +93,10 @@ export function createPipelineEngine(deps: PipelineDeps): PipelineEngine {
     travelBalanceService,
     giftCardService,
     travelSwapClient,
+    coinVoyageClient,
+    bitrefillClient,
+    nftMintClient,
+    travelPassService,
   } = deps;
 
   // Injectable delay for testing — avoids real sleeps in tests
@@ -159,6 +163,10 @@ export function createPipelineEngine(deps: PipelineDeps): PipelineEngine {
         ...(travelBalanceService ? { travelBalanceService } : {}),
         ...(giftCardService ? { giftCardService } : {}),
         ...(travelSwapClient ? { travelSwapClient } : {}),
+        ...(coinVoyageClient ? { coinVoyageClient } : {}),
+        ...(bitrefillClient ? { bitrefillClient } : {}),
+        ...(nftMintClient ? { nftMintClient } : {}),
+        ...(travelPassService ? { travelPassService } : {}),
         auditService,
         executionPolicy,
       };

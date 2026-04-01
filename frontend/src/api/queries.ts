@@ -199,6 +199,28 @@ export function useCredits(
   });
 }
 
+/** Response from POST /api/credits/:id/reveal */
+export interface RevealGiftCardResponse {
+  code: string | null;
+  alreadyRevealed?: boolean;
+  giftCard: GiftCard;
+}
+
+/** Reveal a PURCHASED gift card's code. Transitions status to DELIVERED. */
+export function useRevealGiftCard() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (giftCardId: string) =>
+      apiFetch<RevealGiftCardResponse>(`/api/credits/${giftCardId}/reveal`, {
+        method: 'POST',
+      }),
+    onSuccess: () => {
+      // Invalidate all credits queries so status badges refresh
+      qc.invalidateQueries({ queryKey: ['credits'] });
+    },
+  });
+}
+
 // ─── Flights ───────────────────────────────────────────────────
 
 /** Mutation that searches flights. Returns cached offers with a requestId for polling. */

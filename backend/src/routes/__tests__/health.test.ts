@@ -39,6 +39,7 @@ function makeConfig(overrides?: Partial<Config>): Config {
     executionKillSwitch: false,
     maxDailyRuns: 10,
     maxClaimableSolPerRun: 100,
+    minIntervalMinutes: 60,
     feeThresholdSol: 5,
     feeSource: 'CLAIMABLE_POSITIONS',
     swapSlippageBps: 50,

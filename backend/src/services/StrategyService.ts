@@ -2,7 +2,7 @@
 // CRUD for the strategies table. Factory function pattern (K004).
 
 import type { DatabaseConnection } from './Database.js';
-import type { TravelStrategy, FeeSourceType, DistributionMode, CreditMode } from '../types/index.js';
+import type { TravelStrategy, FeeSourceType, DistributionMode, CreditMode, CustomAllocation } from '../types/index.js';
 import { logger } from '../logger.js';
 
 // ─── DB Row Shape ──────────────────────────────────────────────
@@ -21,6 +21,7 @@ interface StrategyRow {
   gift_card_threshold_usd: number;
   cron_expression: string;
   enabled: number; // SQLite stores booleans as 0/1
+  custom_allocations: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -40,6 +41,7 @@ export interface CreateStrategyParams {
   giftCardThresholdUsd?: number;
   cronExpression?: string;
   enabled?: boolean;
+  customAllocations?: CustomAllocation[];
 }
 
 // ─── Update Fields ─────────────────────────────────────────────
@@ -57,6 +59,7 @@ export interface UpdateStrategyFields {
   giftCardThresholdUsd?: number;
   cronExpression?: string;
   enabled?: boolean;
+  customAllocations?: CustomAllocation[] | null;
 }
 
 // ─── Service Interface ────────────────────────────────────────
@@ -84,6 +87,7 @@ const FIELD_TO_COLUMN: Record<string, string> = {
   giftCardThresholdUsd: 'gift_card_threshold_usd',
   cronExpression: 'cron_expression',
   enabled: 'enabled',
+  customAllocations: 'custom_allocations',
 };
 
 // ─── Factory ───────────────────────────────────────────────────
@@ -105,6 +109,9 @@ export function createStrategyService(conn: DatabaseConnection): StrategyService
       giftCardThresholdUsd: row.gift_card_threshold_usd,
       cronExpression: row.cron_expression,
       enabled: row.enabled === 1,
+      customAllocations: row.custom_allocations
+        ? (JSON.parse(row.custom_allocations) as CustomAllocation[])
+        : null,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       lastRunId: null, // Derived field — populated by query join in S05
@@ -116,8 +123,8 @@ export function createStrategyService(conn: DatabaseConnection): StrategyService
       const result = await conn.run(
         `INSERT INTO strategies (name, owner_wallet, token_mint, fee_source, threshold_sol,
           slippage_bps, distribution_mode, distribution_top_n, credit_mode,
-          gift_card_threshold_usd, cron_expression, enabled)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          gift_card_threshold_usd, cron_expression, enabled, custom_allocations)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         params.name,
         params.ownerWallet,
         params.tokenMint,
@@ -130,6 +137,7 @@ export function createStrategyService(conn: DatabaseConnection): StrategyService
         params.giftCardThresholdUsd ?? 50,
         params.cronExpression ?? '0 */6 * * *',
         params.enabled === false ? 0 : 1,
+        params.customAllocations ? JSON.stringify(params.customAllocations) : null,
       );
 
       const row = await conn.get<StrategyRow>(
@@ -175,7 +183,13 @@ export function createStrategyService(conn: DatabaseConnection): StrategyService
 
         setClauses.push(`${column} = ?`);
         // Convert boolean to integer for SQLite
-        values.push(field === 'enabled' ? (value ? 1 : 0) : value);
+        if (field === 'enabled') {
+          values.push(value ? 1 : 0);
+        } else if (field === 'customAllocations') {
+          values.push(value ? JSON.stringify(value) : null);
+        } else {
+          values.push(value);
+        }
       }
 
       if (setClauses.length === 0) {

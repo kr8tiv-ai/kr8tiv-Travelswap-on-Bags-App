@@ -22,8 +22,9 @@ async function authPluginImpl(
   app.addHook(
     'onRequest',
     async (request: FastifyRequest, reply: FastifyReply) => {
-      // Skip auth for health routes
-      if (request.url.startsWith('/health')) {
+      // Skip auth for health routes, webhook routes (authenticated by HMAC signature),
+      // and NFT metadata routes (must be publicly accessible for Solana explorers)
+      if (request.url.startsWith('/health') || request.url.startsWith('/api/webhooks/') || request.url.startsWith('/api/nft/metadata/')) {
         return;
       }
 

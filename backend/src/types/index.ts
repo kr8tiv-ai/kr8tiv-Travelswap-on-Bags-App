@@ -140,7 +140,7 @@ export type DistributionMode =
 
 export type CreditMode = 'GIFT_CARD' | 'DIRECT_TOPUP' | 'DUFFEL_BOOKING';
 
-export type GiftCardStatus = 'PURCHASED' | 'DELIVERED' | 'REDEEMED' | 'EXPIRED';
+export type GiftCardStatus = 'PENDING' | 'PURCHASED' | 'DELIVERED' | 'REDEEMED' | 'EXPIRED';
 
 export type StrategyStatus = 'ACTIVE' | 'PAUSED' | 'ERROR';
 
@@ -153,6 +153,13 @@ export type RunState =
   | 'CREDITING'
   | 'COMPLETE'
   | 'FAILED';
+
+// ─── Custom Allocation ─────────────────────────────────────────
+
+export interface CustomAllocation {
+  readonly wallet: string;
+  readonly percentage: number;
+}
 
 // ─── Strategy ──────────────────────────────────────────────────
 
@@ -170,6 +177,7 @@ export interface TravelStrategy {
   readonly giftCardThresholdUsd: number;
   readonly cronExpression: string;
   readonly enabled: boolean;
+  readonly customAllocations: CustomAllocation[] | null;
   readonly createdAt: string;
   readonly updatedAt: string;
   readonly lastRunId: string | null;
@@ -217,6 +225,11 @@ export interface GiftCard {
   readonly denominationUsd: number;
   readonly codeEncrypted: string;
   readonly status: GiftCardStatus;
+  readonly provider: GiftCardProvider;
+  readonly payorderId: string | null;
+  readonly paymentStatus: string | null;
+  readonly errorMessage: string | null;
+  readonly bitrefillInvoiceId: string | null;
   readonly deliveredAt: string | null;
   readonly redeemedAt: string | null;
   readonly createdAt: string;
@@ -433,4 +446,133 @@ export interface DuffelClientAdapter {
   clearCache(): void;
   /** Create a Duffel order (book a flight). */
   createOrder(params: CreateOrderParams): Promise<DuffelOrder>;
+}
+
+// ─── CoinVoyage Types ──────────────────────────────────────────
+
+/** CoinVoyage PayOrder status lifecycle. */
+export type PayOrderStatus =
+  | 'PENDING'
+  | 'AWAITING_PAYMENT'
+  | 'AWAITING_CONFIRMATION'
+  | 'OPTIMISTIC_CONFIRMED'
+  | 'EXECUTING_ORDER'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'EXPIRED'
+  | 'REFUNDED';
+
+/** CoinVoyage PayOrder as returned by the API. */
+export interface PayOrder {
+  readonly id: string;
+  readonly mode: 'SALE' | 'DEPOSIT' | 'REFUND';
+  readonly status: PayOrderStatus;
+  readonly metadata?: Record<string, unknown>;
+  readonly depositTxHash?: string;
+  readonly receivingTxHash?: string;
+  readonly createdAt?: string;
+}
+
+/** CoinVoyage client adapter interface. */
+export interface CoinVoyageClientAdapter {
+  /** Create a Sale PayOrder that settles USDC to a receiving address. */
+  createSalePayOrder(params: {
+    amountUsd: number;
+    receivingAddress: string;
+    metadata?: Record<string, unknown>;
+  }): Promise<PayOrder>;
+  /** Retrieve a PayOrder by ID. */
+  getPayOrder(payOrderId: string): Promise<PayOrder>;
+}
+
+// ─── Bitrefill Types ───────────────────────────────────────────
+
+/** Bitrefill invoice as returned by POST /v2/invoices. */
+export interface BitrefillInvoice {
+  readonly id: string;
+  readonly status: string;
+  readonly payment_method: string;
+  readonly products: Array<{
+    product_id: string;
+    package_id: string;
+    quantity: number;
+  }>;
+  /** Present when auto_pay:true and balance payment succeeds. */
+  readonly order_id?: string;
+  /** Present when the invoice is completed immediately. */
+  readonly redemption_info?: {
+    code: string;
+    instructions?: string;
+  };
+  readonly created_at?: string;
+}
+
+/** Bitrefill order as returned by GET /v2/orders/{id}. */
+export interface BitrefillOrder {
+  readonly id: string;
+  readonly status: string;
+  readonly redemption_info?: {
+    code: string;
+    instructions?: string;
+  };
+  readonly created_at?: string;
+}
+
+/** Bitrefill account balance as returned by GET /v2/accounts/balance. */
+export interface BitrefillBalance {
+  readonly balance: number;
+  readonly currency: string;
+}
+
+/** Bitrefill client adapter interface. */
+export interface BitrefillClientAdapter {
+  /** Create an invoice (balance payment with auto_pay). Returns invoice with redemption code. */
+  createInvoice(params: {
+    productId: string;
+    packageId: string;
+    quantity?: number;
+    paymentMethod?: string;
+    autoPay?: boolean;
+  }): Promise<BitrefillInvoice>;
+  /** Retrieve an order by ID. */
+  getOrder(orderId: string): Promise<BitrefillOrder>;
+  /** Get the account balance. */
+  getBalance(): Promise<BitrefillBalance>;
+}
+
+// ─── Gift Card Provider ────────────────────────────────────────
+
+export type GiftCardProvider = 'coinvoyage' | 'bitrefill' | 'stub';
+
+// ─── NFT Travel Pass ──────────────────────────────────────────
+
+export type TravelPassStatus = 'PENDING' | 'MINTED' | 'FAILED';
+
+export interface TravelPass {
+  readonly id: string;
+  readonly giftCardId: string;
+  readonly strategyId: string;
+  readonly walletAddress: string;
+  readonly denominationUsd: number;
+  readonly tokenMint: string;
+  readonly mintSignature: string | null;
+  readonly metadataUri: string | null;
+  readonly status: TravelPassStatus;
+  readonly errorMessage: string | null;
+  readonly createdAt: string;
+  readonly mintedAt: string | null;
+}
+
+export interface NftMintResult {
+  readonly signature: string;
+  readonly assetId: string;
+}
+
+export interface NftMintClientAdapter {
+  mintTravelPass(params: {
+    walletAddress: string;
+    denominationUsd: number;
+    tokenMint: string;
+    metadataUri: string;
+  }): Promise<NftMintResult>;
 }

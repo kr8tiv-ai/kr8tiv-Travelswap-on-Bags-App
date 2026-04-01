@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { useBalances, useStrategies } from '../api/queries';
+import { SkeletonLoader, ErrorAlert, EmptyState } from './shared';
 
 function formatUsd(val: number): string {
   return val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -24,11 +25,11 @@ export function Balances() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold text-gray-900">Balances</h2>
+      <h2 className="text-lg font-semibold text-white">Balances</h2>
 
       {/* Strategy selector (required) */}
       <div className="max-w-xs">
-        <label className="block text-xs font-medium text-gray-500 mb-1">
+        <label className="block text-xs font-medium text-muted mb-1">
           Strategy
         </label>
         <select
@@ -49,51 +50,31 @@ export function Balances() {
 
       {/* Prompt to select */}
       {!strategyId && (
-        <div className="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center">
-          <p className="text-sm text-gray-500">
-            Select a strategy to view wallet balances.
-          </p>
-        </div>
+        <EmptyState message="Select a strategy to view wallet balances." />
       )}
 
       {/* Loading */}
-      {strategyId && isLoading && (
-        <div className="space-y-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div
-              key={i}
-              className="rounded-lg border border-gray-200 bg-white p-4 animate-pulse"
-            >
-              <div className="h-5 w-48 rounded bg-gray-200" />
-              <div className="mt-2 h-4 w-64 rounded bg-gray-100" />
-            </div>
-          ))}
-        </div>
-      )}
+      {strategyId && isLoading && <SkeletonLoader rows={3} />}
 
       {/* Error */}
       {strategyId && isError && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <ErrorAlert>
           Failed to load balances:{' '}
           {error instanceof Error ? error.message : 'Unknown error'}
-        </div>
+        </ErrorAlert>
       )}
 
       {/* Empty */}
       {strategyId && balances && balances.length === 0 && (
-        <div className="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center">
-          <p className="text-sm text-gray-500">
-            No balances found for this strategy.
-          </p>
-        </div>
+        <EmptyState message="No balances found for this strategy." />
       )}
 
       {/* Table */}
       {balances && balances.length > 0 && (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto rounded-lg border border-slate-700">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              <tr className="border-b border-slate-700 bg-surface-overlay/30 text-left text-xs font-medium uppercase tracking-wider text-muted">
                 <th className="px-4 py-3">Wallet Address</th>
                 <th className="px-4 py-3">Balance USD</th>
                 <th className="px-4 py-3">Total Earned</th>
@@ -101,25 +82,25 @@ export function Balances() {
                 <th className="px-4 py-3">Updated At</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-slate-700/50">
               {balances.map((b) => (
                 <tr
                   key={b.balanceId}
-                  className="hover:bg-gray-50 transition-colors"
+                  className="bg-surface-raised hover:bg-surface-overlay/40 transition-colors"
                 >
-                  <td className="px-4 py-3 font-mono text-xs text-gray-700 truncate max-w-[200px]">
+                  <td className="px-4 py-3 font-mono text-xs text-muted-strong truncate max-w-[200px]">
                     {b.walletAddress}
                   </td>
-                  <td className="px-4 py-3 text-gray-900 font-medium">
+                  <td className="px-4 py-3 text-white font-medium">
                     ${formatUsd(b.balanceUsd)}
                   </td>
-                  <td className="px-4 py-3 text-green-600">
+                  <td className="px-4 py-3 text-green-400">
                     ${formatUsd(b.totalEarned)}
                   </td>
-                  <td className="px-4 py-3 text-gray-600">
+                  <td className="px-4 py-3 text-muted-strong">
                     ${formatUsd(b.totalSpent)}
                   </td>
-                  <td className="px-4 py-3 text-gray-500 text-xs">
+                  <td className="px-4 py-3 text-muted text-xs">
                     {formatDate(b.updatedAt)}
                   </td>
                 </tr>

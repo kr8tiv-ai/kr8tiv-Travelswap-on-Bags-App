@@ -12,7 +12,11 @@ import type { HeliusClient } from '../clients/HeliusClient.js';
 import type { TravelBalanceService } from '../services/TravelBalanceService.js';
 import type { GiftCardService } from '../services/GiftCardService.js';
 import type { TravelSwapClient } from '../clients/TravelSwapClient.js';
+import type { CoinVoyageClientAdapter } from '../types/index.js';
+import type { BitrefillClientAdapter } from '../types/index.js';
+import type { NftMintClientAdapter } from '../types/index.js';
 import type { CircuitBreaker } from '../utils/resilience.js';
+import type { TravelPassService } from '../services/TravelPassService.js';
 
 // ─── Phase Context ─────────────────────────────────────────────
 
@@ -27,6 +31,10 @@ export interface PhaseContext {
   readonly travelBalanceService?: TravelBalanceService;
   readonly giftCardService?: GiftCardService;
   readonly travelSwapClient?: TravelSwapClient;
+  readonly coinVoyageClient?: CoinVoyageClientAdapter;
+  readonly bitrefillClient?: BitrefillClientAdapter;
+  readonly nftMintClient?: NftMintClientAdapter;
+  readonly travelPassService?: TravelPassService;
   readonly auditService?: AuditService;
   readonly executionPolicy?: ExecutionPolicy;
 }
@@ -55,6 +63,10 @@ export interface PipelineDeps {
   readonly travelBalanceService?: TravelBalanceService;
   readonly giftCardService?: GiftCardService;
   readonly travelSwapClient?: TravelSwapClient;
+  readonly coinVoyageClient?: CoinVoyageClientAdapter;
+  readonly bitrefillClient?: BitrefillClientAdapter;
+  readonly nftMintClient?: NftMintClientAdapter;
+  readonly travelPassService?: TravelPassService;
   readonly circuitBreakers?: Record<string, CircuitBreaker>;
 }
 

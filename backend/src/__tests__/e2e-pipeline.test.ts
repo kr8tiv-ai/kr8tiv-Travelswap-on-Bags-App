@@ -59,6 +59,7 @@ function makeE2eConfig(overrides: Partial<Config> = {}): Config {
     executionKillSwitch: false,
     maxDailyRuns: 10,
     maxClaimableSolPerRun: 100,
+    minIntervalMinutes: 0,
     feeThresholdSol: 5,
     feeSource: 'CLAIMABLE_POSITIONS',
     swapSlippageBps: 50,

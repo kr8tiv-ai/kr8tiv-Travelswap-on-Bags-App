@@ -19,6 +19,8 @@ export const REDACT_PATHS = [
   'password',
   'secret',
   'authorization',
+  'bitrefillApiKey',
+  'BITREFILL_API_KEY',
 ];
 
 export const logger = pino({

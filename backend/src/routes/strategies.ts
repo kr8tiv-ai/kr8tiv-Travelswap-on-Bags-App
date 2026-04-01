@@ -4,11 +4,17 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { RouteDeps } from './types.js';
+import { sendError } from './errors.js';
 import { logger } from '../logger.js';
 
 const log = logger.child({ component: 'routes/strategies' });
 
 // ─── Zod Schemas ───────────────────────────────────────────────
+
+const customAllocationSchema = z.object({
+  wallet: z.string().min(1).max(64),
+  percentage: z.number().min(0).max(100),
+});
 
 const createStrategySchema = z.object({
   name: z.string().min(1).max(100),
@@ -29,6 +35,10 @@ const createStrategySchema = z.object({
   giftCardThresholdUsd: z.number().positive().optional(),
   cronExpression: z.string().max(100).optional(),
   enabled: z.boolean().optional(),
+  customAllocations: z.array(customAllocationSchema).optional().refine(
+    (arr) => !arr || Math.abs(arr.reduce((s, a) => s + a.percentage, 0) - 100) <= 0.01,
+    { message: 'customAllocations percentages must sum to 100' },
+  ),
 });
 
 const updateStrategySchema = createStrategySchema.partial();
@@ -53,10 +63,7 @@ async function strategiesRoutes(
       const issues = parsed.error.issues
         .map((i) => `${i.path.join('.')}: ${i.message}`)
         .join('; ');
-      reply.status(400).send({
-        error: `Validation failed: ${issues}`,
-        statusCode: 400,
-      });
+      sendError(reply, 400, `Validation failed: ${issues}`);
       return;
     }
 
@@ -65,7 +72,7 @@ async function strategiesRoutes(
       reply.status(201).send(strategy);
     } catch (err) {
       log.error({ error: (err as Error).message }, 'Failed to create strategy');
-      reply.status(500).send({ error: 'Failed to create strategy' });
+      sendError(reply, 500, 'Failed to create strategy');
     }
   });
 
@@ -75,13 +82,13 @@ async function strategiesRoutes(
     const numId = Number(id);
 
     if (isNaN(numId)) {
-      reply.status(400).send({ error: 'Invalid strategy ID' });
+      sendError(reply, 400, 'Invalid strategy ID');
       return;
     }
 
     const strategy = await strategyService.getById(numId);
     if (!strategy) {
-      reply.status(404).send({ error: 'Strategy not found' });
+      sendError(reply, 404, 'Strategy not found');
       return;
     }
 
@@ -94,7 +101,7 @@ async function strategiesRoutes(
     const numId = Number(id);
 
     if (isNaN(numId)) {
-      reply.status(400).send({ error: 'Invalid strategy ID' });
+      sendError(reply, 400, 'Invalid strategy ID');
       return;
     }
 
@@ -103,16 +110,13 @@ async function strategiesRoutes(
       const issues = parsed.error.issues
         .map((i) => `${i.path.join('.')}: ${i.message}`)
         .join('; ');
-      reply.status(400).send({
-        error: `Validation failed: ${issues}`,
-        statusCode: 400,
-      });
+      sendError(reply, 400, `Validation failed: ${issues}`);
       return;
     }
 
     const existing = await strategyService.getById(numId);
     if (!existing) {
-      reply.status(404).send({ error: 'Strategy not found' });
+      sendError(reply, 404, 'Strategy not found');
       return;
     }
 
@@ -121,13 +125,13 @@ async function strategiesRoutes(
       return updated;
     } catch (err) {
       log.error({ error: (err as Error).message, strategyId: numId }, 'Failed to update strategy');
-      reply.status(500).send({ error: 'Failed to update strategy' });
+      sendError(reply, 500, 'Failed to update strategy');
     }
   });
 
   // DELETE /:id — not implemented
   app.delete('/:id', async (_request, reply) => {
-    reply.status(501).send({ error: 'Delete not implemented' });
+    sendError(reply, 501, 'Delete not implemented');
   });
 }
 

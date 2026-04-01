@@ -38,6 +38,7 @@ function makeConfig(): Config {
     executionKillSwitch: false,
     maxDailyRuns: 4,
     maxClaimableSolPerRun: 100,
+    minIntervalMinutes: 60,
     feeThresholdSol: 5,
     feeSource: 'CLAIMABLE_POSITIONS',
     swapSlippageBps: 50,
@@ -90,11 +91,15 @@ function createMinimalDeps(): RouteDeps {
   };
 
   const giftCardService: GiftCardService = {
+    getById: vi.fn().mockReturnValue(undefined),
     purchase: vi.fn(),
+    purchasePending: vi.fn(),
+    getByPayorderId: vi.fn().mockReturnValue(undefined),
     getByWallet: vi.fn().mockReturnValue([]),
     getByRun: vi.fn().mockReturnValue([]),
     getByStrategy: vi.fn().mockReturnValue([]),
     updateStatus: vi.fn(),
+    confirmPurchase: vi.fn(),
   };
 
   const pipelineEngine: PipelineEngine = {

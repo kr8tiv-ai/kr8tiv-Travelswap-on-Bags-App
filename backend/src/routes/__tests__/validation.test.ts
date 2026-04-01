@@ -35,6 +35,7 @@ function makeConfig(overrides: Partial<Config> = {}): Config {
     executionKillSwitch: false,
     maxDailyRuns: 4,
     maxClaimableSolPerRun: 100,
+    minIntervalMinutes: 60,
     feeThresholdSol: 5,
     feeSource: 'CLAIMABLE_POSITIONS',
     swapSlippageBps: 50,
@@ -65,6 +66,7 @@ const mockStrategy: TravelStrategy = {
   giftCardThresholdUsd: 50,
   cronExpression: '0 */6 * * *',
   enabled: true,
+  customAllocations: null,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
   lastRunId: null,
@@ -130,11 +132,15 @@ function createMockDeps(): RouteDeps {
   };
 
   const giftCardService: GiftCardService = {
+    getById: vi.fn().mockReturnValue(undefined),
     purchase: vi.fn().mockReturnValue({} as GiftCard),
+    purchasePending: vi.fn().mockReturnValue({} as GiftCard),
+    getByPayorderId: vi.fn().mockReturnValue(undefined),
     getByWallet: vi.fn().mockReturnValue([]),
     getByRun: vi.fn().mockReturnValue([]),
     getByStrategy: vi.fn().mockReturnValue([]),
     updateStatus: vi.fn().mockReturnValue({} as GiftCard),
+    confirmPurchase: vi.fn().mockReturnValue({} as GiftCard),
   };
 
   const pipelineEngine: PipelineEngine = {
@@ -331,6 +337,101 @@ describe('Zod Validation', () => {
           giftCardThresholdUsd: 25,
           cronExpression: '0 */12 * * *',
           enabled: false,
+        },
+      });
+      expect(res.statusCode).toBe(201);
+    });
+
+    // ─── customAllocations validation ─────────────────────────
+
+    it('accepts valid customAllocations with 3 wallets summing to 100', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/strategies',
+        headers: jsonHeaders(),
+        payload: {
+          name: 'Custom List Strategy',
+          ownerWallet: 'WalletXXX',
+          tokenMint: 'MintYYY',
+          distributionMode: 'CUSTOM_LIST',
+          customAllocations: [
+            { wallet: 'WalletAAA', percentage: 50 },
+            { wallet: 'WalletBBB', percentage: 30 },
+            { wallet: 'WalletCCC', percentage: 20 },
+          ],
+        },
+      });
+      expect(res.statusCode).toBe(201);
+    });
+
+    it('rejects customAllocations percentages summing to 110', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/strategies',
+        headers: jsonHeaders(),
+        payload: {
+          name: 'Bad Custom List',
+          ownerWallet: 'WalletXXX',
+          tokenMint: 'MintYYY',
+          distributionMode: 'CUSTOM_LIST',
+          customAllocations: [
+            { wallet: 'WalletAAA', percentage: 60 },
+            { wallet: 'WalletBBB', percentage: 50 },
+          ],
+        },
+      });
+      expect(res.statusCode).toBe(400);
+      const body = res.json();
+      expect(body.error).toMatch(/percentages must sum to 100/);
+    });
+
+    it('rejects customAllocations with empty wallet string', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/strategies',
+        headers: jsonHeaders(),
+        payload: {
+          name: 'Bad Wallet',
+          ownerWallet: 'WalletXXX',
+          tokenMint: 'MintYYY',
+          distributionMode: 'CUSTOM_LIST',
+          customAllocations: [
+            { wallet: '', percentage: 100 },
+          ],
+        },
+      });
+      expect(res.statusCode).toBe(400);
+    });
+
+    it('accepts payload without customAllocations (backward compatible)', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/strategies',
+        headers: jsonHeaders(),
+        payload: {
+          name: 'No Custom Allocs',
+          ownerWallet: 'WalletXXX',
+          tokenMint: 'MintYYY',
+        },
+      });
+      expect(res.statusCode).toBe(201);
+    });
+
+    it('accepts customAllocations with percentages summing to 99.999 (within tolerance)', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/strategies',
+        headers: jsonHeaders(),
+        payload: {
+          name: 'Tolerance Test',
+          ownerWallet: 'WalletXXX',
+          tokenMint: 'MintYYY',
+          distributionMode: 'CUSTOM_LIST',
+          customAllocations: [
+            { wallet: 'WalletAAA', percentage: 33.333 },
+            { wallet: 'WalletBBB', percentage: 33.333 },
+            { wallet: 'WalletCCC', percentage: 33.333 },
+          ],
         },
       });
       expect(res.statusCode).toBe(201);

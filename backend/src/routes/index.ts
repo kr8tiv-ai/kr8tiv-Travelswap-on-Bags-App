@@ -13,6 +13,8 @@ import { statsPlugin } from './stats.js';
 import { healthPlugin } from './health.js';
 import { flightsPlugin } from './flights.js';
 import { bookingsPlugin } from './bookings.js';
+import { webhooksPlugin } from './webhooks.js';
+import { nftMetadataPlugin } from './nft-metadata.js';
 import type { RouteDeps } from './types.js';
 
 export type { RouteDeps } from './types.js';
@@ -36,4 +38,10 @@ export async function registerAllRoutes(
   await app.register(statsPlugin, { ...deps, prefix: '/api/stats' } as RouteDeps & { prefix: string });
   await app.register(flightsPlugin, { ...deps, prefix: '/api/flights' } as RouteDeps & { prefix: string });
   await app.register(bookingsPlugin, { ...deps, prefix: '/api/bookings' } as RouteDeps & { prefix: string });
+
+  // Webhook routes — prefix /api/webhooks, auth bypassed via URL pattern in auth plugin
+  await app.register(webhooksPlugin, { ...deps, prefix: '/api/webhooks' } as RouteDeps & { prefix: string });
+
+  // NFT metadata routes — prefix /api/nft/metadata, auth bypassed for Solana explorer access
+  await app.register(nftMetadataPlugin, { ...deps, prefix: '/api/nft/metadata' } as RouteDeps & { prefix: string });
 }

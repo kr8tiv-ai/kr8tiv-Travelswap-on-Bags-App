@@ -9,8 +9,9 @@ import type { PipelineEngine } from '../engine/types.js';
 import type { RunLock } from '../engine/RunLock.js';
 import type { DatabaseConnection } from '../services/Database.js';
 import type { Config } from '../config/index.js';
-import type { DuffelClientAdapter } from '../types/index.js';
+import type { DuffelClientAdapter, CoinVoyageClientAdapter } from '../types/index.js';
 import type { BookingService } from '../services/BookingService.js';
+import type { TravelPassService } from '../services/TravelPassService.js';
 import type { CircuitBreaker } from '../utils/resilience.js';
 
 export interface RouteDeps {
@@ -24,5 +25,7 @@ export interface RouteDeps {
   readonly config: Config;
   readonly duffelClient?: DuffelClientAdapter;
   readonly bookingService?: BookingService;
+  readonly coinVoyageClient?: CoinVoyageClientAdapter;
+  readonly travelPassService?: TravelPassService;
   readonly circuitBreakers?: Record<string, CircuitBreaker>;
 }

@@ -5,7 +5,7 @@
 
 import { logger } from '../../logger.js';
 import type { PhaseContext } from '../types.js';
-import type { PhaseResult, DistributionMode, TokenHolder } from '../../types/index.js';
+import type { PhaseResult, DistributionMode, TokenHolder, CustomAllocation } from '../../types/index.js';
 import type { WeightedHolder } from '../../clients/HeliusClient.js';
 
 const log = logger.child({ component: 'allocatePhase' });
@@ -19,17 +19,7 @@ export async function allocatePhase(ctx: PhaseContext): Promise<PhaseResult> {
     return { success: true, data: { allocatedUsd: 0, holderCount: 0 } };
   }
 
-  // ── Guard: required dependencies ─────────────────────────────
-  if (!ctx.helius) {
-    return {
-      success: false,
-      error: {
-        code: 'MISSING_DEPENDENCY',
-        message: 'HeliusClient is required for allocation but not available in context',
-      },
-    };
-  }
-
+  // ── Guard: TravelBalanceService is always required ───────────
   if (!ctx.travelBalanceService) {
     return {
       success: false,
@@ -40,7 +30,19 @@ export async function allocatePhase(ctx: PhaseContext): Promise<PhaseResult> {
     };
   }
 
-  const { helius, travelBalanceService } = ctx;
+  // ── Guard: HeliusClient is required for holder-based modes ───
+  const needsHelius = !['OWNER_ONLY', 'CUSTOM_LIST'].includes(ctx.strategy.distributionMode);
+  if (needsHelius && !ctx.helius) {
+    return {
+      success: false,
+      error: {
+        code: 'MISSING_DEPENDENCY',
+        message: 'HeliusClient is required for allocation but not available in context',
+      },
+    };
+  }
+
+  const { travelBalanceService } = ctx;
   const { strategy } = ctx;
   const strategyId = Number(strategy.strategyId);
 
@@ -54,7 +56,8 @@ export async function allocatePhase(ctx: PhaseContext): Promise<PhaseResult> {
       strategy.tokenMint,
       strategy.distributionTopN,
       swappedUsdc,
-      helius,
+      ctx.helius ?? null,
+      strategy.customAllocations,
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -102,14 +105,15 @@ async function buildAllocations(
   tokenMint: string,
   topN: number,
   totalUsdc: number,
-  helius: NonNullable<PhaseContext['helius']>,
+  helius: NonNullable<PhaseContext['helius']> | null,
+  customAllocations: CustomAllocation[] | null | undefined,
 ): Promise<Array<{ wallet: string; amount: number }>> {
   switch (mode) {
     case 'OWNER_ONLY':
       return [{ wallet: ownerWallet, amount: totalUsdc }];
 
     case 'EQUAL_SPLIT': {
-      const holders = await helius.getTopHolders(tokenMint, Number.MAX_SAFE_INTEGER);
+      const holders = await helius!.getTopHolders(tokenMint, Number.MAX_SAFE_INTEGER);
       if (holders.length === 0) {
         return [{ wallet: ownerWallet, amount: totalUsdc }];
       }
@@ -118,27 +122,34 @@ async function buildAllocations(
     }
 
     case 'TOP_N_HOLDERS': {
-      const holders = await helius.getTopHolders(tokenMint, topN);
+      const holders = await helius!.getTopHolders(tokenMint, topN);
       if (holders.length === 0) {
         return [{ wallet: ownerWallet, amount: totalUsdc }];
       }
-      return weightedAllocations(holders, totalUsdc, helius);
+      return weightedAllocations(holders, totalUsdc, helius!);
     }
 
     case 'WEIGHTED_BY_HOLDINGS': {
-      const holders = await helius.getTopHolders(tokenMint, Number.MAX_SAFE_INTEGER);
+      const holders = await helius!.getTopHolders(tokenMint, Number.MAX_SAFE_INTEGER);
       if (holders.length === 0) {
         return [{ wallet: ownerWallet, amount: totalUsdc }];
       }
-      return weightedAllocations(holders, totalUsdc, helius);
+      return weightedAllocations(holders, totalUsdc, helius!);
     }
 
-    case 'CUSTOM_LIST':
-      log.warn(
-        { mode, ownerWallet },
-        'CUSTOM_LIST distribution not implemented — falling back to OWNER_ONLY',
-      );
-      return [{ wallet: ownerWallet, amount: totalUsdc }];
+    case 'CUSTOM_LIST': {
+      if (!customAllocations || customAllocations.length === 0) {
+        log.warn(
+          { mode, ownerWallet },
+          'CUSTOM_LIST with no custom allocations — falling back to OWNER_ONLY',
+        );
+        return [{ wallet: ownerWallet, amount: totalUsdc }];
+      }
+      return customAllocations.map((a) => ({
+        wallet: a.wallet,
+        amount: (a.percentage / 100) * totalUsdc,
+      }));
+    }
 
     default: {
       // Exhaustiveness guard

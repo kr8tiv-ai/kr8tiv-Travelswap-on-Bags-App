@@ -56,11 +56,11 @@ describe('Database', () => {
       expect(table?.name).toBe('schema_migrations');
     });
 
-    it('records all 8 migrations in schema_migrations', async () => {
+    it('records all 12 migrations in schema_migrations', async () => {
       const rows = await conn.all<{ name: string }>(
         'SELECT name FROM schema_migrations ORDER BY id',
       );
-      expect(rows).toHaveLength(8);
+      expect(rows).toHaveLength(12);
       expect(rows.map((r) => r.name)).toEqual([
         '001_create_strategies',
         '002_create_runs',
@@ -70,6 +70,10 @@ describe('Database', () => {
         '006_add_strategy_columns',
         '007_create_offer_requests',
         '008_create_bookings',
+        '009_add_gift_card_payorder',
+        '010_add_custom_allocations',
+        '011_add_gift_card_provider',
+        '012_create_travel_passes',
       ]);
     });
 
@@ -154,10 +158,10 @@ describe('Database', () => {
       const rows = await conn.all<{ name: string }>(
         'SELECT name FROM schema_migrations ORDER BY id',
       );
-      expect(rows).toHaveLength(8);
+      expect(rows).toHaveLength(12);
     });
 
-    it('creates all 7 user tables plus schema_migrations', async () => {
+    it('creates all 8 user tables plus schema_migrations', async () => {
       const tables = await conn.all<{ name: string }>(
         "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name",
       );
@@ -171,6 +175,7 @@ describe('Database', () => {
         'schema_migrations',
         'strategies',
         'travel_balances',
+        'travel_passes',
       ]);
     });
   });

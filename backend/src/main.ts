@@ -19,7 +19,11 @@ import { createBagsClient } from './clients/BagsClient.js';
 import { createHeliusClient } from './clients/HeliusClient.js';
 import { createTravelSwapClient } from './clients/TravelSwapClient.js';
 import { createDuffelClient } from './clients/DuffelClient.js';
+import { createCoinVoyageClient } from './clients/CoinVoyageClient.js';
+import { createBitrefillClient } from './clients/BitrefillClient.js';
+import { createNftMintClient } from './clients/NftMintClient.js';
 import { createBookingService } from './services/BookingService.js';
+import { createTravelPassService } from './services/TravelPassService.js';
 import { wrapWithResilience } from './clients/ResilientClientWrapper.js';
 import { buildApp, startServer } from './server.js';
 import type { FastifyInstance } from 'fastify';
@@ -71,6 +75,41 @@ async function main(): Promise<void> {
     log.info('DuffelClient skipped — DUFFEL_API_TOKEN not set');
   }
 
+  // ── CoinVoyage (optional — only created when API key + secret are configured) ──
+  const rawCoinVoyageClient = config.coinVoyageApiKey && config.coinVoyageApiSecret
+    ? createCoinVoyageClient({
+        apiKey: config.coinVoyageApiKey,
+        apiSecret: config.coinVoyageApiSecret,
+      })
+    : undefined;
+  if (rawCoinVoyageClient) {
+    log.info('CoinVoyageClient created — autonomous gift card purchase enabled');
+  } else {
+    log.info('CoinVoyageClient skipped — COINVOYAGE_API_KEY or COINVOYAGE_API_SECRET not set');
+  }
+
+  // ── Bitrefill (optional — fallback gift card provider with balance payment) ──
+  const rawBitrefillClient = config.bitrefillApiKey
+    ? createBitrefillClient({ apiKey: config.bitrefillApiKey })
+    : undefined;
+  if (rawBitrefillClient) {
+    log.info('BitrefillClient created — balance-payment gift card fallback enabled');
+  } else {
+    log.info('BitrefillClient skipped — BITREFILL_API_KEY not set');
+  }
+
+  // ── NftMintClient (optional — only created when NFT minting is enabled and configured) ──
+  const rawNftMintClient = config.nftMintEnabled && config.nftMintingKeypairPath && config.nftTreeAddress
+    ? createNftMintClient(config)
+    : undefined;
+  if (rawNftMintClient) {
+    log.info('NftMintClient created — cNFT travel pass minting enabled');
+  } else if (config.nftMintEnabled) {
+    log.warn('NFT minting enabled but missing keypair/tree config — NftMintClient skipped');
+  } else {
+    log.info('NftMintClient skipped — NFT_MINT_ENABLED not set');
+  }
+
   // ── Resilience Wrappers ──
   const circuitBreakers: Record<string, CircuitBreaker> = {};
 
@@ -87,6 +126,27 @@ async function main(): Promise<void> {
     circuitBreakers.duffel = duffelCb;
   }
 
+  let coinVoyageClient = rawCoinVoyageClient;
+  if (rawCoinVoyageClient) {
+    const { client: resilientCoinVoyage, circuitBreaker: coinVoyageCb } = wrapWithResilience('coinvoyage', rawCoinVoyageClient);
+    coinVoyageClient = resilientCoinVoyage;
+    circuitBreakers.coinvoyage = coinVoyageCb;
+  }
+
+  let bitrefillClient = rawBitrefillClient;
+  if (rawBitrefillClient) {
+    const { client: resilientBitrefill, circuitBreaker: bitrefillCb } = wrapWithResilience('bitrefill', rawBitrefillClient);
+    bitrefillClient = resilientBitrefill;
+    circuitBreakers.bitrefill = bitrefillCb;
+  }
+
+  let nftMintClient = rawNftMintClient;
+  if (rawNftMintClient) {
+    const { client: resilientNft, circuitBreaker: nftCb } = wrapWithResilience('nftMint', rawNftMintClient);
+    nftMintClient = resilientNft;
+    circuitBreakers.nftMint = nftCb;
+  }
+
   log.info(
     { dependencies: Object.keys(circuitBreakers) },
     'Resilience wrappers applied to external clients',
@@ -94,6 +154,9 @@ async function main(): Promise<void> {
 
   // ── BookingService (depends on encryption key) ──
   const bookingService = createBookingService(conn, config.giftCardEncryptionKey);
+
+  // ── TravelPassService (NFT travel pass tracking) ──
+  const travelPassService = createTravelPassService(conn);
 
   // ── Engine ──
   const executionPolicy = createExecutionPolicy(config, conn);
@@ -108,6 +171,10 @@ async function main(): Promise<void> {
     travelBalanceService,
     giftCardService,
     travelSwapClient,
+    coinVoyageClient,
+    bitrefillClient,
+    nftMintClient,
+    travelPassService,
     circuitBreakers,
   });
 
@@ -115,6 +182,7 @@ async function main(): Promise<void> {
   const runLock = createRunLock();
   const scheduler = createSchedulerService({
     strategyService,
+    runService,
     pipelineEngine,
     executionPolicy,
     runLock,
@@ -132,6 +200,8 @@ async function main(): Promise<void> {
     config,
     duffelClient,
     bookingService,
+    coinVoyageClient,
+    travelPassService,
     circuitBreakers,
   });
 

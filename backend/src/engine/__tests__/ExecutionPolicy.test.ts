@@ -19,6 +19,7 @@ function makeConfig(overrides: Partial<Config> = {}): Config {
     executionKillSwitch: false,
     maxDailyRuns: 3,
     maxClaimableSolPerRun: 100,
+    minIntervalMinutes: 60,
     feeThresholdSol: 5,
     feeSource: 'CLAIMABLE_POSITIONS',
     swapSlippageBps: 50,
@@ -140,6 +141,85 @@ describe('ExecutionPolicy', () => {
       // Strategy 1 should still be allowed
       const result = await policy.canStartRun(strategyId);
       expect(result.allowed).toBe(true);
+    });
+
+    it('blocks run when minimum interval has not elapsed', async () => {
+      const config = makeConfig({ minIntervalMinutes: 60 });
+      const now = Date.now();
+      // Last run started 30 minutes ago
+      const thirtyMinAgo = new Date(now - 30 * 60 * 1000).toISOString();
+
+      await conn.run(
+        "INSERT INTO runs (strategy_id, phase, status, started_at) VALUES (?, ?, ?, ?)",
+        strategyId, 'COMPLETE', 'COMPLETE', thirtyMinAgo,
+      );
+
+      const policy = createExecutionPolicy(config, conn, { nowFn: () => now });
+      const result = await policy.canStartRun(strategyId);
+      expect(result.allowed).toBe(false);
+      expect(result.reason).toContain('Minimum interval not elapsed');
+    });
+
+    it('allows run when minimum interval has elapsed', async () => {
+      const config = makeConfig({ minIntervalMinutes: 60 });
+      const now = Date.now();
+      // Last run started 90 minutes ago
+      const ninetyMinAgo = new Date(now - 90 * 60 * 1000).toISOString();
+
+      await conn.run(
+        "INSERT INTO runs (strategy_id, phase, status, started_at) VALUES (?, ?, ?, ?)",
+        strategyId, 'COMPLETE', 'COMPLETE', ninetyMinAgo,
+      );
+
+      const policy = createExecutionPolicy(config, conn, { nowFn: () => now });
+      const result = await policy.canStartRun(strategyId);
+      expect(result.allowed).toBe(true);
+    });
+
+    it('allows run when no previous runs exist (interval check skipped)', async () => {
+      const config = makeConfig({ minIntervalMinutes: 120 });
+      const policy = createExecutionPolicy(config, conn, { nowFn: () => Date.now() });
+      const result = await policy.canStartRun(strategyId);
+      expect(result.allowed).toBe(true);
+    });
+
+    it('skips interval check when minIntervalMinutes is 0', async () => {
+      const config = makeConfig({ minIntervalMinutes: 0 });
+      const now = Date.now();
+      // Last run started 1 second ago
+      const oneSecAgo = new Date(now - 1000).toISOString();
+
+      await conn.run(
+        "INSERT INTO runs (strategy_id, phase, status, started_at) VALUES (?, ?, ?, ?)",
+        strategyId, 'COMPLETE', 'COMPLETE', oneSecAgo,
+      );
+
+      const policy = createExecutionPolicy(config, conn, { nowFn: () => now });
+      const result = await policy.canStartRun(strategyId);
+      expect(result.allowed).toBe(true);
+    });
+
+    it('checks interval against most recent run only', async () => {
+      const config = makeConfig({ minIntervalMinutes: 60 });
+      const now = Date.now();
+      // Old run from 2 hours ago
+      const twoHoursAgo = new Date(now - 120 * 60 * 1000).toISOString();
+      // Recent run 10 minutes ago
+      const tenMinAgo = new Date(now - 10 * 60 * 1000).toISOString();
+
+      await conn.run(
+        "INSERT INTO runs (strategy_id, phase, status, started_at) VALUES (?, ?, ?, ?)",
+        strategyId, 'COMPLETE', 'COMPLETE', twoHoursAgo,
+      );
+      await conn.run(
+        "INSERT INTO runs (strategy_id, phase, status, started_at) VALUES (?, ?, ?, ?)",
+        strategyId, 'COMPLETE', 'COMPLETE', tenMinAgo,
+      );
+
+      const policy = createExecutionPolicy(config, conn, { nowFn: () => now });
+      const result = await policy.canStartRun(strategyId);
+      expect(result.allowed).toBe(false);
+      expect(result.reason).toContain('Minimum interval not elapsed');
     });
   });
 

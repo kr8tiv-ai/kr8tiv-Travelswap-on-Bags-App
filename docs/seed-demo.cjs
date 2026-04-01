@@ -36,7 +36,8 @@ db.exec(`
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
     name TEXT NOT NULL DEFAULT '',
     owner_wallet TEXT NOT NULL DEFAULT '',
-    distribution_top_n INTEGER NOT NULL DEFAULT 100
+    distribution_top_n INTEGER NOT NULL DEFAULT 100,
+    custom_allocations TEXT DEFAULT NULL
   );
 
   CREATE TABLE IF NOT EXISTS runs (
@@ -76,6 +77,11 @@ db.exec(`
     denomination_usd REAL NOT NULL,
     code_encrypted TEXT,
     status TEXT NOT NULL DEFAULT 'PURCHASED',
+    payorder_id TEXT,
+    payment_status TEXT,
+    error_message TEXT,
+    provider TEXT DEFAULT 'stub',
+    bitrefill_invoice_id TEXT,
     delivered_at TEXT,
     redeemed_at TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -112,6 +118,21 @@ db.exec(`
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
     FOREIGN KEY (strategy_id) REFERENCES strategies(id)
   );
+
+  CREATE TABLE IF NOT EXISTS travel_passes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    gift_card_id INTEGER NOT NULL REFERENCES gift_cards(id) ON DELETE CASCADE,
+    strategy_id INTEGER NOT NULL REFERENCES strategies(id) ON DELETE CASCADE,
+    wallet_address TEXT NOT NULL,
+    denomination_usd REAL NOT NULL,
+    token_mint TEXT NOT NULL,
+    mint_signature TEXT,
+    metadata_uri TEXT,
+    status TEXT NOT NULL DEFAULT 'PENDING',
+    error_message TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    minted_at TEXT
+  );
 `);
 
 // Mark all migrations as applied so backend migration runner skips them
@@ -124,7 +145,11 @@ db.exec(`
     ('005_create_audit_log'),
     ('006_add_strategy_columns'),
     ('007_create_offer_requests'),
-    ('008_create_bookings');
+    ('008_create_bookings'),
+    ('009_add_gift_card_payorder'),
+    ('010_add_custom_allocations'),
+    ('011_add_gift_card_provider'),
+    ('012_create_travel_passes');
 `);
 
 // Seed strategies

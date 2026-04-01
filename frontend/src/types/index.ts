@@ -12,7 +12,7 @@ export type DistributionMode =
 
 export type CreditMode = 'GIFT_CARD' | 'DIRECT_TOPUP' | 'DUFFEL_BOOKING';
 
-export type GiftCardStatus = 'PURCHASED' | 'DELIVERED' | 'REDEEMED' | 'EXPIRED';
+export type GiftCardStatus = 'PENDING' | 'PURCHASED' | 'DELIVERED' | 'REDEEMED' | 'EXPIRED';
 
 export type StrategyStatus = 'ACTIVE' | 'PAUSED' | 'ERROR';
 
@@ -88,9 +88,15 @@ export interface GiftCard {
   readonly denominationUsd: number;
   readonly codeEncrypted: string;
   readonly status: GiftCardStatus;
+  readonly provider: 'coinvoyage' | 'bitrefill' | 'stub';
+  readonly payorderId: string | null;
+  readonly paymentStatus: string | null;
+  readonly errorMessage: string | null;
   readonly deliveredAt: string | null;
   readonly redeemedAt: string | null;
   readonly createdAt: string;
+  readonly nftStatus?: 'PENDING' | 'MINTED' | 'FAILED';
+  readonly nftMintSignature?: string;
 }
 
 // ─── Aggregate Stats ───────────────────────────────────────────

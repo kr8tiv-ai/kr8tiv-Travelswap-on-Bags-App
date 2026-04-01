@@ -4,6 +4,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { RouteDeps } from './types.js';
+import { sendError } from './errors.js';
 import { logger } from '../logger.js';
 
 const log = logger.child({ component: 'routes/runs' });
@@ -23,13 +24,14 @@ async function runsRoutes(
   const { runService, pipelineEngine, runLock } = deps;
 
   // GET / — list runs, optionally filtered by strategyId
-  app.get('/', async (request, _reply) => {
+  app.get('/', async (request, reply) => {
     const { strategyId } = request.query as { strategyId?: string };
 
     if (strategyId) {
       const numId = Number(strategyId);
       if (isNaN(numId)) {
-        return { error: 'Invalid strategyId' };
+        sendError(reply, 400, 'Invalid strategyId');
+        return;
       }
       return await runService.getByStrategyId(numId);
     }
@@ -44,10 +46,7 @@ async function runsRoutes(
       const issues = parsed.error.issues
         .map((i) => `${i.path.join('.')}: ${i.message}`)
         .join('; ');
-      reply.status(400).send({
-        error: `Validation failed: ${issues}`,
-        statusCode: 400,
-      });
+      sendError(reply, 400, `Validation failed: ${issues}`);
       return;
     }
 
@@ -55,7 +54,7 @@ async function runsRoutes(
 
     const acquired = runLock.acquire(strategyId);
     if (!acquired) {
-      reply.status(409).send({ error: 'A run is already in progress for this strategy' });
+      sendError(reply, 409, 'A run is already in progress for this strategy');
       return;
     }
 
@@ -64,7 +63,7 @@ async function runsRoutes(
       reply.status(201).send(run);
     } catch (err) {
       log.error({ error: (err as Error).message, strategyId }, 'Failed to start run');
-      reply.status(500).send({ error: (err as Error).message });
+      sendError(reply, 500, (err as Error).message);
     } finally {
       runLock.release(strategyId);
     }
@@ -76,13 +75,13 @@ async function runsRoutes(
     const numId = Number(id);
 
     if (isNaN(numId)) {
-      reply.status(400).send({ error: 'Invalid run ID' });
+      sendError(reply, 400, 'Invalid run ID');
       return;
     }
 
     const run = await runService.getById(numId);
     if (!run) {
-      reply.status(404).send({ error: 'Run not found' });
+      sendError(reply, 404, 'Run not found');
       return;
     }
 
@@ -95,7 +94,7 @@ async function runsRoutes(
     const numId = Number(id);
 
     if (isNaN(numId)) {
-      reply.status(400).send({ error: 'Invalid run ID' });
+      sendError(reply, 400, 'Invalid run ID');
       return;
     }
 
@@ -104,7 +103,7 @@ async function runsRoutes(
       return run;
     } catch (err) {
       log.error({ error: (err as Error).message, runId: numId }, 'Failed to resume run');
-      reply.status(500).send({ error: (err as Error).message });
+      sendError(reply, 500, (err as Error).message);
     }
   });
 }

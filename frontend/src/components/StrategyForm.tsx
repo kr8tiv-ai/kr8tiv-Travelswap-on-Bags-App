@@ -1,8 +1,10 @@
 // ─── Strategy Form ─────────────────────────────────────────────
-// Shared create/edit form for TravelStrategy.
+// Shared create/edit form for TravelStrategy. Dark-themed.
 
 import { useState, type FormEvent } from 'react';
 import { useCreateStrategy, useUpdateStrategy } from '../api/queries';
+import { Field } from './shared';
+import { ErrorAlert } from './shared';
 import type {
   TravelStrategy,
   FeeSourceType,
@@ -26,7 +28,7 @@ const DISTRIBUTION_MODES: DistributionMode[] = [
   'CUSTOM_LIST',
 ];
 
-const CREDIT_MODES: CreditMode[] = ['GIFT_CARD', 'DIRECT_TOPUP', 'DUFFEL_BOOKING'];
+const CREDIT_MODES: CreditMode[] = ['GIFT_CARD', 'DIRECT_TOPUP'];
 
 function label(s: string): string {
   return s
@@ -114,16 +116,16 @@ export function StrategyForm({ strategy, onSuccess, onCancel }: StrategyFormProp
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5 max-w-2xl">
-      <h3 className="text-lg font-semibold text-gray-900">
+      <h3 className="text-lg font-semibold text-slate-100">
         {isEdit ? 'Edit Strategy' : 'Create Strategy'}
       </h3>
 
       {mutation.isError && (
-        <div className="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+        <ErrorAlert>
           {mutation.error instanceof Error
             ? mutation.error.message
             : 'Request failed'}
-        </div>
+        </ErrorAlert>
       )}
 
       {/* Name */}
@@ -277,9 +279,9 @@ export function StrategyForm({ strategy, onSuccess, onCancel }: StrategyFormProp
           id="strategy-enabled"
           checked={enabled}
           onChange={(e) => setEnabled(e.target.checked)}
-          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          className="h-4 w-4 rounded border-slate-600 bg-surface-raised text-accent focus:ring-accent"
         />
-        <label htmlFor="strategy-enabled" className="text-sm font-medium text-gray-700">
+        <label htmlFor="strategy-enabled" className="text-sm font-medium text-slate-300">
           Enabled
         </label>
       </div>
@@ -289,7 +291,7 @@ export function StrategyForm({ strategy, onSuccess, onCancel }: StrategyFormProp
         <button
           type="submit"
           disabled={isPending}
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isPending
             ? isEdit
@@ -303,33 +305,11 @@ export function StrategyForm({ strategy, onSuccess, onCancel }: StrategyFormProp
           type="button"
           onClick={onCancel}
           disabled={isPending}
-          className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
+          className="rounded-md border border-slate-600 bg-surface-raised px-4 py-2 text-sm font-medium text-slate-300 shadow-sm hover:bg-surface-overlay disabled:opacity-50"
         >
           Cancel
         </button>
       </div>
     </form>
-  );
-}
-
-// ─── Field wrapper ─────────────────────────────────────────────
-
-function Field({
-  label: labelText,
-  error,
-  children,
-}: {
-  label: string;
-  error?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
-        {labelText}
-      </label>
-      {children}
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
-    </div>
   );
 }

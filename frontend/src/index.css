@@ -2,12 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  /* Dark scrollbars */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0f172a;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+  }
+
+  /* Selection color */
+  ::selection {
+    background: #1d4ed8;
+    color: #e2e8f0;
+  }
+}
+
 @layer components {
   .input-field {
-    @apply block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm
-           text-gray-900 shadow-sm placeholder-gray-400
-           focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500
-           disabled:bg-gray-50 disabled:text-gray-500
-           read-only:bg-gray-50 read-only:text-gray-500;
+    @apply block w-full rounded-md border border-slate-600 bg-surface-raised px-3 py-2 text-sm
+           text-slate-200 shadow-sm placeholder-slate-500
+           focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent
+           disabled:bg-surface disabled:text-slate-500
+           read-only:bg-surface read-only:text-slate-500;
   }
 }

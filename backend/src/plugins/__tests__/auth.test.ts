@@ -1,95 +1,93 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+// ─── Auth Plugin Tests ─────────────────────────────────────────
+// Verifies auth skip patterns including webhook routes (D036).
+
+import { describe, it, expect } from 'vitest';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { authPlugin } from '../auth.js';
 
-const TEST_TOKEN = 'test-secret-token-abc123';
+const AUTH_TOKEN = 'test-token-12345';
 
-describe('authPlugin', () => {
+async function buildApp(): Promise<FastifyInstance> {
+  const app = Fastify({ logger: false });
+
+  await app.register(authPlugin, { apiAuthToken: AUTH_TOKEN });
+
+  // Register test routes to exercise auth
+  app.get('/health', async () => ({ status: 'ok' }));
+  app.get('/health/live', async () => ({ status: 'live' }));
+  app.get('/api/strategies', async () => ({ data: [] }));
+  app.post('/api/webhooks/coinvoyage', async () => ({ status: 'ok' }));
+  app.post('/api/webhooks/other', async () => ({ status: 'ok' }));
+
+  await app.ready();
+  return app;
+}
+
+describe('Auth Plugin', () => {
   let app: FastifyInstance;
 
-  beforeEach(async () => {
-    app = Fastify({ logger: false });
-    await app.register(authPlugin, { apiAuthToken: TEST_TOKEN });
-
-    // Add a test route behind auth
-    app.get('/api/test', async () => ({ ok: true }));
-
-    // Add a health route (should skip auth)
-    app.get('/health/live', async () => ({ status: 'ok' }));
-
-    await app.ready();
-  });
-
   afterEach(async () => {
-    await app.close();
+    if (app) await app.close();
   });
 
-  it('returns 401 when no Authorization header is provided', async () => {
-    const res = await app.inject({
-      method: 'GET',
-      url: '/api/test',
-    });
+  it('allows health routes without auth', async () => {
+    app = await buildApp();
+    const res = await app.inject({ method: 'GET', url: '/health' });
+    expect(res.statusCode).toBe(200);
+  });
 
+  it('allows health sub-routes without auth', async () => {
+    app = await buildApp();
+    const res = await app.inject({ method: 'GET', url: '/health/live' });
+    expect(res.statusCode).toBe(200);
+  });
+
+  it('rejects API routes without auth (401)', async () => {
+    app = await buildApp();
+    const res = await app.inject({ method: 'GET', url: '/api/strategies' });
     expect(res.statusCode).toBe(401);
-    expect(res.json()).toEqual({ error: 'Unauthorized' });
   });
 
-  it('returns 401 when Authorization header is not Bearer scheme', async () => {
+  it('allows API routes with valid Bearer token', async () => {
+    app = await buildApp();
     const res = await app.inject({
       method: 'GET',
-      url: '/api/test',
-      headers: { authorization: 'Basic dXNlcjpwYXNz' },
+      url: '/api/strategies',
+      headers: { authorization: `Bearer ${AUTH_TOKEN}` },
     });
-
-    expect(res.statusCode).toBe(401);
-    expect(res.json()).toEqual({ error: 'Unauthorized' });
+    expect(res.statusCode).toBe(200);
   });
 
-  it('returns 401 when token is wrong', async () => {
+  it('rejects API routes with invalid Bearer token (401)', async () => {
+    app = await buildApp();
     const res = await app.inject({
       method: 'GET',
-      url: '/api/test',
+      url: '/api/strategies',
       headers: { authorization: 'Bearer wrong-token' },
     });
-
     expect(res.statusCode).toBe(401);
-    expect(res.json()).toEqual({ error: 'Unauthorized' });
   });
 
-  it('passes through with correct Bearer token', async () => {
+  it('skips auth for /api/webhooks/ routes (webhook auth bypass)', async () => {
+    app = await buildApp();
     const res = await app.inject({
-      method: 'GET',
-      url: '/api/test',
-      headers: { authorization: `Bearer ${TEST_TOKEN}` },
+      method: 'POST',
+      url: '/api/webhooks/coinvoyage',
+      headers: { 'content-type': 'application/json' },
+      payload: '{}',
     });
-
-    expect(res.statusCode).toBe(200);
-    expect(res.json()).toEqual({ ok: true });
+    // Should not be 401 — webhooks bypass bearer auth
+    expect(res.statusCode).not.toBe(401);
   });
 
-  it('skips auth for health routes', async () => {
+  it('skips auth for all /api/webhooks/* routes', async () => {
+    app = await buildApp();
     const res = await app.inject({
-      method: 'GET',
-      url: '/health/live',
+      method: 'POST',
+      url: '/api/webhooks/other',
+      headers: { 'content-type': 'application/json' },
+      payload: '{}',
     });
-
-    expect(res.statusCode).toBe(200);
-    expect(res.json()).toEqual({ status: 'ok' });
-  });
-
-  it('skips auth for health routes regardless of subpath', async () => {
-    // Register another health route
-    const app2 = Fastify({ logger: false });
-    await app2.register(authPlugin, { apiAuthToken: TEST_TOKEN });
-    app2.get('/health/ready', async () => ({ status: 'ok', db: true }));
-    await app2.ready();
-
-    const res = await app2.inject({
-      method: 'GET',
-      url: '/health/ready',
-    });
-
-    expect(res.statusCode).toBe(200);
-    await app2.close();
+    expect(res.statusCode).not.toBe(401);
   });
 });

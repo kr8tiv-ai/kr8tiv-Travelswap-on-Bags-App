@@ -58,6 +58,7 @@ export interface RunService {
   markFailed(id: number, error: string): Promise<TravelRun>;
   markComplete(id: number): Promise<TravelRun>;
   getLatest(strategyId: number, limit?: number): Promise<TravelRun[]>;
+  getIncomplete(): Promise<TravelRun[]>;
   getAggregateStats(): Promise<AggregateStats>;
 }
 
@@ -222,6 +223,14 @@ export function createRunService(conn: DatabaseConnection): RunService {
         strategyId,
         limit,
       );
+      return rows.map(toRun);
+    },
+
+    async getIncomplete(): Promise<TravelRun[]> {
+      const rows = await conn.all<RunRow>(
+        "SELECT * FROM runs WHERE status = 'RUNNING' ORDER BY started_at ASC",
+      );
+      logger.debug({ count: rows.length }, 'Found incomplete runs');
       return rows.map(toRun);
     },
 

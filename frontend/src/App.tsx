@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { Layout } from './components/Layout';
 
 const queryClient = new QueryClient({
@@ -12,8 +13,10 @@ const queryClient = new QueryClient({
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <Layout />
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <Layout />
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }

@@ -35,6 +35,7 @@ function makeConfig(overrides: Partial<Config> = {}): Config {
     executionKillSwitch: false,
     maxDailyRuns: 4,
     maxClaimableSolPerRun: 100,
+    minIntervalMinutes: 60,
     feeThresholdSol: 5,
     feeSource: 'CLAIMABLE_POSITIONS',
     swapSlippageBps: 50,
@@ -65,6 +66,7 @@ const mockStrategy: TravelStrategy = {
   giftCardThresholdUsd: 50,
   cronExpression: '0 */6 * * *',
   enabled: true,
+  customAllocations: null,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
   lastRunId: null,
@@ -106,6 +108,9 @@ const mockGiftCard: GiftCard = {
   denominationUsd: 50,
   codeEncrypted: 'enc-abc',
   status: 'PURCHASED',
+  payorderId: null,
+  paymentStatus: null,
+  errorMessage: null,
   deliveredAt: null,
   redeemedAt: null,
   createdAt: '2026-01-01T00:00:00.000Z',
@@ -154,11 +159,15 @@ function createMockDeps(): RouteDeps {
   };
 
   const giftCardService: GiftCardService = {
+    getById: vi.fn().mockReturnValue(undefined),
     purchase: vi.fn().mockReturnValue(mockGiftCard),
+    purchasePending: vi.fn().mockReturnValue(mockGiftCard),
+    getByPayorderId: vi.fn().mockReturnValue(undefined),
     getByWallet: vi.fn().mockReturnValue([mockGiftCard]),
     getByRun: vi.fn().mockReturnValue([mockGiftCard]),
     getByStrategy: vi.fn().mockReturnValue([mockGiftCard]),
     updateStatus: vi.fn().mockReturnValue(mockGiftCard),
+    confirmPurchase: vi.fn().mockReturnValue(mockGiftCard),
   };
 
   const pipelineEngine: PipelineEngine = {

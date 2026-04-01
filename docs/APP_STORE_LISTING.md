@@ -6,7 +6,7 @@ FlightBrain
 
 ## Tagline
 
-Turn DeFi fees into flights.
+Turn DeFi fees into travel — exclusively through TravelSwap.
 
 ## Category
 
@@ -14,52 +14,59 @@ DeFi / Travel
 
 ## Description
 
-FlightBrain automates the conversion of Bags.fm trading fees into real-world travel. An automated 5-phase pipeline claims accrued SOL fees from Meteora vaults, swaps to USDC via the Bags trade API, distributes across token holders, and purchases travel credits or books flights directly — no out-of-pocket spending required.
+FlightBrain automates the conversion of Bags.fm trading fees into real-world travel. An autonomous 5-phase pipeline claims accrued SOL fees from Meteora vaults, swaps to USDC via the Bags trade API, distributes across token holders by configurable rules, and purchases TravelSwap gift cards — no out-of-pocket spending required.
 
-Built for the Bags.fm App Store, kr8tiv TravelSwap bridges DeFi yield and real-world utility. Token holders earn travel credits proportional to their holdings, which can be redeemed for gift cards or used to search and book flights from 300+ airlines through the Duffel API. The entire pipeline is checkpointed — if a run fails mid-process, it resumes from where it left off.
+Built for the Bags.fm App Store, kr8tiv TravelSwap bridges DeFi yield and real-world utility. Token holders earn travel credits proportional to their holdings, redeemable through [TravelSwap.xyz](https://travelswap.xyz) for flights, hotels, and experiences. The entire pipeline is checkpointed — if a run fails mid-process, it resumes from where it left off.
 
-FlightBrain is designed for token creators and DAOs who want to offer their communities tangible benefits from DeFi activity. Configure a strategy, set distribution rules, and let the pipeline run on a schedule — holders see travel credits appear in their balances automatically.
+All travel spending flows exclusively through TravelSwap, supporting a single partner ecosystem from fee claim to gift card delivery.
 
 ## Key Features
 
 ### Implemented
 
 - **5-Phase Automated Pipeline** — Claim → Swap → Allocate → Credit → Complete, fully checkpointed with resume-from-failure support
-- **Multiple Distribution Modes** — Owner-only, top-N holders, equal split, or weighted distribution across token holders
-- **Flight Search & Booking** — Search 300+ airlines via Duffel API and book flights using travel balance
-- **Travel Gift Cards** — Automatic purchase of TravelSwap gift cards at $50/$100/$200 thresholds
-- **6-Tab Dashboard** — Real-time monitoring of strategies, runs, balances, gift cards, and flight bookings
-- **Pipeline Safety Controls** — Dry-run mode, kill switch, daily run caps, per-run SOL limits
-- **Resilience Architecture** — Circuit breakers + retry with exponential backoff on all external API clients
+- **Multiple Distribution Modes** — Owner-only, top-N holders, equal split, weighted by holdings, or custom wallet lists with percentage allocations
+- **TravelSwap Gift Cards** — Automatic purchase of TravelSwap gift cards at $50/$100/$200 thresholds via CoinVoyage payment processing
+- **CoinVoyage Webhook Settlement** — Async payment confirmation with HMAC-SHA256 signature verification and one-time gift card code reveal
+- **Flight Search (Sandbox)** — Search 300+ airlines via Duffel API for reference pricing and itinerary planning (sandbox mode)
+- **6-Tab Dark Dashboard** — Dark-themed monitoring interface with Overview, Strategies, Run History, Balances, Gift Cards, and Flights tabs
+- **Pipeline Safety Controls** — Dry-run mode (on by default), kill switch, daily run caps, per-run SOL limits, gift card daily limits, balance caps
+- **Resilience Architecture** — Per-client circuit breakers (CLOSED → OPEN → HALF_OPEN) + retry with exponential backoff and jitter on all external API clients
 - **Health Monitoring** — Liveness and readiness probes with circuit breaker state reporting
-- **RESTful API** — 21 endpoints covering strategies, runs, balances, credits, flights, and bookings
+- **Scheduled Execution** — Cron-based pipeline scheduling with configurable intervals per strategy
+- **Helius DAS Integration** — On-chain token holder snapshots via Helius Digital Asset Standard API
+- **RESTful API** — 24 endpoints covering strategies, runs, balances, credits, flights, bookings, stats, and webhooks
+- **AES-256-GCM Encryption** — Gift card codes and passenger PII encrypted at rest
+- **Dual Database Support** — SQLite for zero-config development, PostgreSQL 16 for production via DatabaseFactory adapter
 - **Docker Deployment** — Multi-stage Docker build with PostgreSQL 16 via docker-compose
+- **Dark Design System** — Consistent dark theme with slate/surface palette, accent colors, and Bags.fm-aligned branding
 
-### Planned (Future Roadmap)
+### Future Roadmap
 
-- Scheduled pipeline execution via cron
-- Helius DAS integration for on-chain holder snapshots
 - Multi-token portfolio strategies
-- Hotel and experience bookings
+- Hotel and experience bookings via TravelSwap
+- NFT Travel Passes
 - Mobile-responsive dashboard
 
 ## Technical Highlights
 
 | Aspect | Detail |
 |--------|--------|
-| **Runtime** | Node.js 22, TypeScript 5, Fastify |
-| **Frontend** | React 19, Vite, Tailwind CSS, TanStack React Query |
+| **Runtime** | Node.js 22, TypeScript 5, Fastify 5 |
+| **Frontend** | React 19, Vite 6, Tailwind CSS, TanStack React Query |
 | **Database** | SQLite (development) / PostgreSQL 16 (production) |
-| **Blockchain** | Solana, Bags SDK, Helius RPC |
-| **Travel APIs** | Duffel (flights), CoinVoyage/TravelSwap (gift cards) |
-| **Resilience** | Circuit breakers (CLOSED → OPEN → HALF_OPEN), retry with backoff |
-| **Testing** | 616 tests across 35 test files (Vitest) |
-| **Deployment** | Docker multi-stage build, docker-compose |
+| **Blockchain** | Solana, Bags SDK, Helius RPC + DAS API |
+| **Travel** | TravelSwap.xyz gift cards via CoinVoyage V2 payment processing |
+| **Flights** | Duffel API (sandbox — 300+ airlines for search/reference) |
+| **Resilience** | Per-client circuit breakers, retry with exponential backoff + jitter |
+| **Testing** | 777 tests across 42 test files (Vitest) |
+| **Deployment** | Docker multi-stage build, docker-compose with PostgreSQL 16 |
 | **Observability** | Pino structured logging, health endpoints, circuit breaker state |
+| **Security** | AES-256-GCM encryption at rest, Bearer auth, HMAC-SHA256 webhook verification |
 
 ## Screenshots
 
-Dashboard screenshots captured from the FlightBrain monitoring interface:
+Dashboard screenshots captured from the FlightBrain dark-themed monitoring interface:
 
 | # | Screenshot | Tab | Description |
 |---|-----------|-----|-------------|
@@ -67,7 +74,7 @@ Dashboard screenshots captured from the FlightBrain monitoring interface:
 | 2 | ![Strategies](screenshots/02-strategies.png) | Strategies | Strategy management with distribution mode, token mint, and owner wallet |
 | 3 | ![Run History](screenshots/03-run-history.png) | Run History | Pipeline run history with phase-level checkpoint data and status |
 | 4 | ![Balances](screenshots/04-balances.png) | Balances | Per-wallet travel balance tracking by strategy |
-| 5 | ![Gift Cards](screenshots/05-gift-cards.png) | Gift Cards | Gift card purchase records with denomination and status |
+| 5 | ![Gift Cards](screenshots/05-gift-cards.png) | Gift Cards | Gift card purchase records with denomination, status, and one-time reveal |
 | 6 | ![Flights](screenshots/06-flights.png) | Flights | Flight search interface with origin, destination, date, and cabin class |
 
 ## Links
@@ -77,7 +84,6 @@ Dashboard screenshots captured from the FlightBrain monitoring interface:
 | GitHub Repository | [github.com/kr8tiv-ai/kr8tiv-Travelswap-on-Bags-App](https://github.com/kr8tiv-ai/kr8tiv-Travelswap-on-Bags-App) |
 | Documentation | See [README.md](../README.md) |
 | TravelSwap Platform | [travelswap.xyz](https://travelswap.xyz) |
-| Duffel API | [duffel.com/docs](https://duffel.com/docs) |
 | Bags.fm Platform | [bags.fm](https://bags.fm) |
 
 ## kr8tiv Ecosystem
@@ -86,35 +92,36 @@ kr8tiv TravelSwap on Bags is part of the kr8tiv suite of Bags.fm App Store appli
 
 | App | What It Does | Output |
 |-----|-------------|--------|
-| **kr8tiv TravelSwap** (this app) | Fees → Travel credits + flight bookings | Flights, hotels, travel |
+| **kr8tiv TravelSwap** (this app) | Fees → TravelSwap gift cards | Flights, hotels, travel |
 
-The platform demonstrates automated DeFi fee reinvestment into tangible value, built on the Bags.fm App Store infrastructure.
+All travel spending flows exclusively through [TravelSwap.xyz](https://travelswap.xyz), supporting a single partner ecosystem.
 
-## Hackathon Submission Notes
+## Submission Notes
 
 ### What's Implemented
 
 - Complete 5-phase pipeline engine with checkpointing and resume
-- All 21 REST API endpoints with Zod validation and Bearer auth
-- 6-tab React dashboard with real-time data fetching
-- Flight search and booking via Duffel API integration
-- Gift card purchasing via CoinVoyage/TravelSwap SDK
-- Resilience layer: circuit breakers + retry with backoff on all external clients
+- All 24 REST API endpoints with Zod validation and Bearer auth
+- 6-tab React dashboard with dark theme and real-time data fetching
+- TravelSwap gift card purchasing via CoinVoyage V2 with webhook settlement
+- Flight search via Duffel API (sandbox mode for reference pricing)
+- Resilience layer: per-client circuit breakers + retry with exponential backoff
 - Health endpoints with circuit breaker state reporting
+- Scheduled execution via cron-based pipeline scheduling
+- Helius DAS integration for on-chain holder snapshots
+- AES-256-GCM encryption for gift card codes and passenger PII
 - Docker deployment with PostgreSQL 16
-- 616 automated tests covering units, integration, and E2E flows
+- 777 automated tests across 42 test files covering units, integration, and E2E flows
 
 ### What Requires External Dependencies
 
 - **Bags API Key** — Required for claiming fees from Bags.fm vaults
 - **Helius API Key** — Required for Solana RPC and token holder lookups
-- **Duffel API Token** — Required for live flight search and booking (sandbox available)
+- **API Auth Token** — Bearer token for API authentication
+- **Gift Card Encryption Key** — AES-256 key for gift card code encryption at rest
+
+### Optional Integrations
+
+- **CoinVoyage API Key** — Enables real gift card purchases via CoinVoyage payment processing
+- **Duffel API Token** — Enables flight search (sandbox mode for reference pricing)
 - **Signer Private Key** — Required for signing on-chain transactions
-
-### Future Work
-
-- Scheduled execution (cron-based pipeline triggers)
-- Helius DAS integration for on-chain token holder resolution
-- Multi-strategy portfolios
-- Expanded travel inventory (hotels, experiences)
-- Mobile-optimized dashboard

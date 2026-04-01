@@ -5,6 +5,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { logger } from '../logger.js';
+import { sendError } from './errors.js';
 import type { RouteDeps } from './types.js';
 
 const log = logger.child({ component: 'routes/flights' });
@@ -141,6 +142,7 @@ async function flightsRoutes(
         reply.status(404).send({
           error: 'Offers not found or expired. Please search again.',
           re_search: true,
+          statusCode: 404,
         });
         return;
       }

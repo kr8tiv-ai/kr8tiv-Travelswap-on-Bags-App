@@ -11,11 +11,16 @@
     "dev:backend": "cd backend && npm run dev"
   },
   "devDependencies": {
+    "tsx": "^4.20.6",
     "vitest": "^4.1.2"
   },
   "dependencies": {
     "@duffel/api": "^4.21.6",
     "@fastify/static": "^9.0.0",
+    "@metaplex-foundation/mpl-bubblegum": "^5.0.2",
+    "@metaplex-foundation/mpl-core": "^1.2.0",
+    "@metaplex-foundation/umi": "^1.5.1",
+    "@metaplex-foundation/umi-bundle-defaults": "^1.5.1",
     "@types/pg": "^8.20.0",
     "fastify-plugin": "^5.1.0",
     "pg": "^8.20.0"

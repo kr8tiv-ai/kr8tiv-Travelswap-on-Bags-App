@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { useStrategies } from '../api/queries';
 import { StrategyForm } from './StrategyForm';
+import { SkeletonLoader, ErrorAlert, EmptyState, StatusBadge, BADGE_COLORS } from './shared';
 import type { TravelStrategy } from '../types';
 
 type ViewState =
@@ -38,53 +39,43 @@ export function Strategies() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Strategies</h2>
+        <h2 className="text-lg font-semibold text-white">Strategies</h2>
         <button
           onClick={() => setView({ mode: 'create' })}
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
+          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-accent-hover transition-colors"
         >
           Create Strategy
         </button>
       </div>
 
-      {isLoading && (
-        <div className="space-y-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div
-              key={i}
-              className="rounded-lg border border-gray-200 bg-white p-4 animate-pulse"
-            >
-              <div className="h-5 w-48 rounded bg-gray-200" />
-              <div className="mt-2 h-4 w-64 rounded bg-gray-100" />
-            </div>
-          ))}
-        </div>
-      )}
+      {isLoading && <SkeletonLoader rows={3} />}
 
       {isError && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <ErrorAlert>
           Failed to load strategies:{' '}
           {error instanceof Error ? error.message : 'Unknown error'}
-        </div>
+        </ErrorAlert>
       )}
 
       {strategies && strategies.length === 0 && (
-        <div className="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center">
-          <p className="text-sm text-gray-500">No strategies configured yet.</p>
-          <button
-            onClick={() => setView({ mode: 'create' })}
-            className="mt-3 text-sm font-medium text-blue-600 hover:text-blue-700"
-          >
-            Create your first strategy →
-          </button>
-        </div>
+        <EmptyState
+          message="No strategies configured yet."
+          action={
+            <button
+              onClick={() => setView({ mode: 'create' })}
+              className="text-sm font-medium text-accent hover:text-accent-hover transition-colors"
+            >
+              Create your first strategy →
+            </button>
+          }
+        />
       )}
 
       {strategies && strategies.length > 0 && (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto rounded-lg border border-slate-700">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              <tr className="border-b border-slate-700 bg-surface-overlay/30 text-left text-xs font-medium uppercase tracking-wider text-muted">
                 <th className="px-4 py-3">Name</th>
                 <th className="px-4 py-3">Owner</th>
                 <th className="px-4 py-3">Distribution</th>
@@ -92,35 +83,30 @@ export function Strategies() {
                 <th className="px-4 py-3">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-slate-700/50">
               {strategies.map((s) => (
                 <tr
                   key={s.strategyId}
                   onClick={() => setView({ mode: 'edit', strategy: s })}
-                  className="cursor-pointer hover:bg-gray-50 transition-colors"
+                  className="cursor-pointer bg-surface-raised hover:bg-surface-overlay/40 transition-colors"
                 >
-                  <td className="px-4 py-3 font-medium text-gray-900">
+                  <td className="px-4 py-3 font-medium text-white">
                     {s.name}
                   </td>
-                  <td className="px-4 py-3 text-gray-500 font-mono text-xs truncate max-w-[160px]">
+                  <td className="px-4 py-3 text-muted font-mono text-xs truncate max-w-[160px]">
                     {s.ownerWallet}
                   </td>
-                  <td className="px-4 py-3 text-gray-600">
+                  <td className="px-4 py-3 text-muted-strong">
                     {s.distributionMode.replace(/_/g, ' ').toLowerCase()}
                   </td>
-                  <td className="px-4 py-3 text-gray-500 font-mono text-xs">
+                  <td className="px-4 py-3 text-muted font-mono text-xs">
                     {s.cronExpression}
                   </td>
                   <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        s.enabled
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-gray-100 text-gray-600'
-                      }`}
-                    >
-                      {s.enabled ? 'Enabled' : 'Disabled'}
-                    </span>
+                    <StatusBadge
+                      label={s.enabled ? 'Enabled' : 'Disabled'}
+                      colorClass={s.enabled ? BADGE_COLORS.enabled : BADGE_COLORS.disabled}
+                    />
                   </td>
                 </tr>
               ))}

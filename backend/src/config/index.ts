@@ -42,6 +42,7 @@ const configSchema = z.object({
   executionKillSwitch: z.coerce.boolean().default(false),
   maxDailyRuns: z.coerce.number().min(0).default(4),
   maxClaimableSolPerRun: z.coerce.number().min(0).default(100),
+  minIntervalMinutes: z.coerce.number().min(0).default(60),
 
   // ── Fee & swap settings ──
   feeThresholdSol: z.coerce.number().min(0.1).max(100).default(5),
@@ -60,6 +61,23 @@ const configSchema = z.object({
 
   // ── Duffel (optional — only required when flight search is used) ──
   duffelApiToken: z.string().optional(),
+
+  // ── CoinVoyage (optional — only required when autonomous gift card purchase is used) ──
+  coinVoyageApiKey: z.string().optional(),
+  coinVoyageApiSecret: z.string().optional(),
+  coinVoyageWebhookSecret: z.string().optional(),
+  coinVoyageReceivingAddress: z.string().optional(),
+
+  // ── Bitrefill (optional — fallback gift card provider with balance payment) ──
+  bitrefillApiKey: z.string().optional(),
+  bitrefillProductId: z.string().default('test-gift-card-code'),
+
+  // ── NFT Travel Pass (optional — mint cNFT travel passes on Solana) ──
+  nftMintEnabled: z.coerce.boolean().default(false),
+  nftMintingKeypairPath: z.string().optional(),
+  nftCollectionAddress: z.string().optional(),
+  nftTreeAddress: z.string().optional(),
+  metadataBaseUrl: z.string().default('http://localhost:3001'),
 
   // ── Static file serving ──
   staticDir: z.string().optional(),
@@ -115,9 +133,21 @@ export function loadConfig(): Config {
     travelswapPartnerRef: process.env.TRAVELSWAP_PARTNER_REF,
     dryRun: process.env.DRY_RUN,
     duffelApiToken: parseEnvValue(process.env.DUFFEL_API_TOKEN),
+    coinVoyageApiKey: parseEnvValue(process.env.COINVOYAGE_API_KEY),
+    coinVoyageApiSecret: parseEnvValue(process.env.COINVOYAGE_API_SECRET),
+    coinVoyageWebhookSecret: parseEnvValue(process.env.COINVOYAGE_WEBHOOK_SECRET),
+    coinVoyageReceivingAddress: parseEnvValue(process.env.COINVOYAGE_RECEIVING_ADDRESS),
+    bitrefillApiKey: parseEnvValue(process.env.BITREFILL_API_KEY),
+    bitrefillProductId: process.env.BITREFILL_PRODUCT_ID,
+    nftMintEnabled: process.env.NFT_MINT_ENABLED,
+    nftMintingKeypairPath: parseEnvValue(process.env.NFT_MINTING_KEYPAIR_PATH),
+    nftCollectionAddress: parseEnvValue(process.env.NFT_COLLECTION_ADDRESS),
+    nftTreeAddress: parseEnvValue(process.env.NFT_TREE_ADDRESS),
+    metadataBaseUrl: process.env.METADATA_BASE_URL,
     executionKillSwitch: process.env.EXECUTION_KILL_SWITCH,
     maxDailyRuns: process.env.MAX_DAILY_RUNS,
     maxClaimableSolPerRun: process.env.MAX_CLAIMABLE_SOL_PER_RUN,
+    minIntervalMinutes: process.env.MIN_INTERVAL_MINUTES,
     feeThresholdSol: process.env.FEE_THRESHOLD_SOL,
     feeSource: process.env.FEE_SOURCE,
     swapSlippageBps: process.env.SWAP_SLIPPAGE_BPS,

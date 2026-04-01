@@ -12,6 +12,9 @@ export interface TravelSwapClient {
 
   /** Generate a gift card purchase URL with denomination and referral tracking. */
   getGiftCardUrl(denominationUsd: number, walletAddress: string): string;
+
+  /** Generate a hotel search URL with referral tracking and optional destination. */
+  getHotelSearchUrl(destination?: string): string;
 }
 
 // ─── Factory ───────────────────────────────────────────────────
@@ -33,6 +36,14 @@ export function createTravelSwapClient(partnerRef: string = 'FLIGHTBRAIN'): Trav
         wallet: walletAddress,
       });
       return `${BASE_URL}/gift-card?${params.toString()}`;
+    },
+
+    getHotelSearchUrl(destination?: string): string {
+      const params = new URLSearchParams({ ref: partnerRef });
+      if (destination) {
+        params.set('destination', destination);
+      }
+      return `${BASE_URL}/search?${params.toString()}`;
     },
   };
 }
