@@ -19,7 +19,7 @@ export interface TravelSwapClient {
 
 // ─── Factory ───────────────────────────────────────────────────
 
-export function createTravelSwapClient(partnerRef: string = 'FLIGHTBRAIN'): TravelSwapClient {
+export function createTravelSwapClient(partnerRef: string = 'TRAVELSWAP'): TravelSwapClient {
   return {
     getBookingUrl(walletAddress: string): string {
       const params = new URLSearchParams({

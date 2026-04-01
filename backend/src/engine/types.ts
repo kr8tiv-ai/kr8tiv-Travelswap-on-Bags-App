@@ -17,6 +17,7 @@ import type { BitrefillClientAdapter } from '../types/index.js';
 import type { NftMintClientAdapter } from '../types/index.js';
 import type { CircuitBreaker } from '../utils/resilience.js';
 import type { TravelPassService } from '../services/TravelPassService.js';
+import type { TransactionSender } from '../utils/solana.js';
 
 // ─── Phase Context ─────────────────────────────────────────────
 
@@ -27,6 +28,8 @@ export interface PhaseContext {
   readonly bags: BagsAdapter;
   readonly config: Config;
   readonly isDryRun: boolean;
+  /** Signs and sends serialized Solana transactions on-chain. */
+  readonly transactionSender?: TransactionSender;
   readonly helius?: HeliusClient;
   readonly travelBalanceService?: TravelBalanceService;
   readonly giftCardService?: GiftCardService;
@@ -59,6 +62,8 @@ export interface PipelineDeps {
   readonly executionPolicy: ExecutionPolicy;
   readonly bags: BagsAdapter;
   readonly config: Config;
+  /** Signs and sends serialized Solana transactions on-chain. */
+  readonly transactionSender?: TransactionSender;
   readonly helius?: HeliusClient;
   readonly travelBalanceService?: TravelBalanceService;
   readonly giftCardService?: GiftCardService;

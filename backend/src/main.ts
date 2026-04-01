@@ -24,6 +24,7 @@ import { createBitrefillClient } from './clients/BitrefillClient.js';
 import { createNftMintClient } from './clients/NftMintClient.js';
 import { createBookingService } from './services/BookingService.js';
 import { createTravelPassService } from './services/TravelPassService.js';
+import { createTransactionSender } from './utils/solana.js';
 import { wrapWithResilience } from './clients/ResilientClientWrapper.js';
 import { buildApp, startServer } from './server.js';
 import type { FastifyInstance } from 'fastify';
@@ -32,7 +33,7 @@ import type { CircuitBreaker } from './utils/resilience.js';
 const log = logger.child({ component: 'main' });
 
 async function main(): Promise<void> {
-  log.info('Starting FlightBrain...');
+  log.info('Starting TravelSwap...');
 
   // ── Load configuration ──
   const config = loadConfig();
@@ -158,6 +159,23 @@ async function main(): Promise<void> {
   // ── TravelPassService (NFT travel pass tracking) ──
   const travelPassService = createTravelPassService(conn);
 
+  // ── TransactionSender (Solana tx signing) ──
+  const transactionSender = config.signerPrivateKey
+    ? createTransactionSender({
+        rpcUrl: config.heliusRpcUrl,
+        signerPrivateKey: config.signerPrivateKey,
+        commitment: 'confirmed',
+      })
+    : undefined;
+
+  if (transactionSender) {
+    log.info('TransactionSender created — on-chain signing enabled');
+  } else if (config.dryRun) {
+    log.info('TransactionSender skipped — dry-run mode active');
+  } else {
+    log.warn('TransactionSender skipped — SIGNER_PRIVATE_KEY not set (transactions will not be signed)');
+  }
+
   // ── Engine ──
   const executionPolicy = createExecutionPolicy(config, conn);
   const pipelineEngine = createPipelineEngine({
@@ -175,6 +193,7 @@ async function main(): Promise<void> {
     bitrefillClient,
     nftMintClient,
     travelPassService,
+    transactionSender,
     circuitBreakers,
   });
 
@@ -256,7 +275,7 @@ async function main(): Promise<void> {
   // ── Start ──
   await startServer(app, config.port);
   scheduler.start();
-  log.info({ port: config.port, env: config.nodeEnv }, 'FlightBrain ready');
+  log.info({ port: config.port, env: config.nodeEnv }, 'TravelSwap ready');
 }
 
 // ── Top-Level Error Handler ──

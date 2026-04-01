@@ -35,7 +35,7 @@ const configSchema = z.object({
   giftCardDailyLimit: z.coerce.number().min(1).default(20),
   giftCardMaxDenomination: z.coerce.number().min(1).default(200),
   balanceMaxUsd: z.coerce.number().min(1).default(1000),
-  travelswapPartnerRef: z.string().default('FLIGHTBRAIN'),
+  travelswapPartnerRef: z.string().default('TRAVELSWAP'),
 
   // ── Execution controls ──
   dryRun: z.coerce.boolean().default(false),
@@ -86,13 +86,21 @@ const configSchema = z.object({
   port: z.coerce.number().default(3001),
 
   // ── Database ──
-  databasePath: z.string().default('./data/flightbrain.db'),
+  databasePath: z.string().default('./data/travelswap.db'),
   databaseUrl: z.string().url().optional(),
 
   // ── Logging & environment ──
   logLevel: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
   nodeEnv: z.enum(['development', 'production', 'test']).default('development'),
   corsOrigins: z.string().default(''),
+}).superRefine((data, ctx) => {
+  if (!data.dryRun && !data.signerPrivateKey) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'SIGNER_PRIVATE_KEY is required when DRY_RUN is false',
+      path: ['signerPrivateKey'],
+    });
+  }
 });
 
 export type Config = z.infer<typeof configSchema>;

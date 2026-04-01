@@ -76,7 +76,7 @@ function makeConfig(overrides: Partial<Config> = {}): Config {
     giftCardDailyLimit: 20,
     giftCardMaxDenomination: 200,
     balanceMaxUsd: 1000,
-    travelswapPartnerRef: 'FLIGHTBRAIN',
+    travelswapPartnerRef: 'TRAVELSWAP',
     bitrefillProductId: 'test-gift-card-code',
     dryRun: false,
     executionKillSwitch: false,

@@ -13,7 +13,7 @@ const DESTINATIONS = [
 
 function getSearchUrl(destination: string): string {
   const params = new URLSearchParams({
-    ref: 'FLIGHTBRAIN',
+    ref: 'TRAVELSWAP',
     destination,
   });
   return `https://travelswap.xyz/search?${params.toString()}`;

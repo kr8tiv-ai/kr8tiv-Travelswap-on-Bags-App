@@ -7,27 +7,11 @@ import crypto from 'node:crypto';
 import Fastify, { type FastifyInstance, type FastifyError, type FastifyRequest, type FastifyReply } from 'fastify';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
+import helmet from '@fastify/helmet';
 import sensible from '@fastify/sensible';
 import { logger } from './logger.js';
 import { registerAllRoutes, type RouteDeps } from './routes/index.js';
 import { staticFilesPlugin } from './plugins/staticFiles.js';
-
-// ─── Security Headers (onSend hook, not @fastify/helmet) ──────
-
-function addSecurityHeaders(
-  _request: FastifyRequest,
-  reply: FastifyReply,
-  payload: unknown,
-  done: (err?: Error | null, payload?: unknown) => void,
-): void {
-  reply.header('X-Content-Type-Options', 'nosniff');
-  reply.header('X-Frame-Options', 'DENY');
-  reply.header('X-XSS-Protection', '0');
-  reply.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-  reply.header('X-Download-Options', 'noopen');
-  reply.header('X-Permitted-Cross-Domain-Policies', 'none');
-  done(null, payload);
-}
 
 // ─── Build App ─────────────────────────────────────────────────
 
@@ -58,8 +42,23 @@ export async function buildApp(deps: RouteDeps): Promise<FastifyInstance> {
   // ── Sensible (standardised HTTP errors) ──
   await app.register(sensible);
 
-  // ── Security Headers ──
-  app.addHook('onSend', addSecurityHeaders);
+  // ── Security Headers (Helmet) ──
+  await app.register(helmet, {
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+        fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+        connectSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:'],
+        frameAncestors: ["'self'"],  // allows Bags.fm App Store iframe
+      },
+    },
+    // SAMEORIGIN allows Bags.fm App Store to embed this app in an iframe.
+    // Use 'deny' if this app should never be iframed.
+    frameguard: { action: 'sameorigin' },
+  });
 
   // ── Correlation ID: bind child logger + response header ──
   app.addHook('onRequest', (request, reply, done) => {

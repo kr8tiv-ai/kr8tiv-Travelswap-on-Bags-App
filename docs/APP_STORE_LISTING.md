@@ -1,8 +1,8 @@
-# FlightBrain — Bags.fm App Store Listing
+# TravelSwap — Bags.fm App Store Listing
 
 ## App Name
 
-FlightBrain
+TravelSwap
 
 ## Tagline
 
@@ -14,7 +14,7 @@ DeFi / Travel
 
 ## Description
 
-FlightBrain automates the conversion of Bags.fm trading fees into real-world travel. An autonomous 5-phase pipeline claims accrued SOL fees from Meteora vaults, swaps to USDC via the Bags trade API, distributes across token holders by configurable rules, and purchases TravelSwap gift cards — no out-of-pocket spending required.
+TravelSwap automates the conversion of Bags.fm trading fees into real-world travel. An autonomous 5-phase pipeline claims accrued SOL fees from Meteora vaults, swaps to USDC via the Bags trade API, distributes across token holders by configurable rules, and purchases TravelSwap gift cards — no out-of-pocket spending required.
 
 Built for the Bags.fm App Store, kr8tiv TravelSwap bridges DeFi yield and real-world utility. Token holders earn travel credits proportional to their holdings, redeemable through [TravelSwap.xyz](https://travelswap.xyz) for flights, hotels, and experiences. The entire pipeline is checkpointed — if a run fails mid-process, it resumes from where it left off.
 
@@ -59,14 +59,14 @@ All travel spending flows exclusively through TravelSwap, supporting a single pa
 | **Travel** | TravelSwap.xyz gift cards via CoinVoyage V2 payment processing |
 | **Flights** | Duffel API (sandbox — 300+ airlines for search/reference) |
 | **Resilience** | Per-client circuit breakers, retry with exponential backoff + jitter |
-| **Testing** | 777 tests across 42 test files (Vitest) |
+| **Testing** | 886 tests across 48 test files (Vitest) |
 | **Deployment** | Docker multi-stage build, docker-compose with PostgreSQL 16 |
 | **Observability** | Pino structured logging, health endpoints, circuit breaker state |
 | **Security** | AES-256-GCM encryption at rest, Bearer auth, HMAC-SHA256 webhook verification |
 
 ## Screenshots
 
-Dashboard screenshots captured from the FlightBrain dark-themed monitoring interface:
+Dashboard screenshots captured from the TravelSwap dark-themed monitoring interface:
 
 | # | Screenshot | Tab | Description |
 |---|-----------|-----|-------------|
@@ -111,7 +111,7 @@ All travel spending flows exclusively through [TravelSwap.xyz](https://travelswa
 - Helius DAS integration for on-chain holder snapshots
 - AES-256-GCM encryption for gift card codes and passenger PII
 - Docker deployment with PostgreSQL 16
-- 777 automated tests across 42 test files covering units, integration, and E2E flows
+- 886 automated tests across 48 test files covering units, integration, and E2E flows
 
 ### What Requires External Dependencies
 

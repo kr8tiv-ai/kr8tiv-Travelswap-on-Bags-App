@@ -172,5 +172,5 @@ export function createDatabaseFactory(opts: {
   if (opts.databaseUrl) {
     return createPostgresFactory(opts.databaseUrl);
   }
-  return createSqliteFactory(opts.databasePath ?? './data/flightbrain.db');
+  return createSqliteFactory(opts.databasePath ?? './data/travelswap.db');
 }

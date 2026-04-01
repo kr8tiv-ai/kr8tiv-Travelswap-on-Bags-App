@@ -32,45 +32,77 @@ export async function claimPhase(ctx: PhaseContext): Promise<PhaseResult> {
       };
     }
 
+    // ── Enforce maxClaimableSolPerRun safety cap ──
+    const maxSol = ctx.config.maxClaimableSolPerRun ?? Infinity;
+    const cappedSol = Math.min(totalSol, maxSol);
+    if (cappedSol < totalSol) {
+      log.warn(
+        { totalSol, maxSol, cappedSol },
+        'Claimable SOL exceeds per-run cap — clamping to maxClaimableSolPerRun',
+      );
+    }
+
     // Dry-run: return synthetic result without signing transactions
     if (ctx.isDryRun) {
-      log.info({ totalSol }, 'Dry-run claim — skipping transaction signing');
+      log.info({ claimedSol: cappedSol }, 'Dry-run claim — skipping transaction signing');
       return {
         success: true,
         data: {
-          claimedSol: totalSol,
+          claimedSol: cappedSol,
           claimTx: 'dry-run-claim-tx',
           dryRun: true,
         },
       };
     }
 
-    // Real mode: iterate positions, get claim transactions, sign and send
+    // Real mode: signs and sends claim transactions via TransactionSender.
+    // Filter positions to stay within the per-run SOL cap.
+    let solBudget = cappedSol;
+    const cappedPositions = positions.filter((p) => {
+      const positionSol = Number(p.totalClaimableLamportsUserShare) / LAMPORTS_PER_SOL;
+      if (solBudget <= 0) return false;
+      solBudget -= positionSol;
+      return true;
+    });
+
     const txSignatures: string[] = [];
-    for (const position of positions) {
+    for (const position of cappedPositions) {
       const claimTxs = await ctx.bags.getClaimTransactions(
         ctx.strategy.ownerWallet,
         position,
       );
-      // In real mode we would sign and send each transaction here.
-      // Transaction signing requires a Keypair from ctx.config.signerPrivateKey.
-      // For now, collect the serialized tx data as signatures.
-      for (const claimTx of claimTxs) {
-        txSignatures.push(claimTx.tx);
+
+      if (ctx.transactionSender) {
+        // Sign and send each claim transaction on-chain
+        for (const claimTx of claimTxs) {
+          const sig = await ctx.transactionSender.signAndSend(
+            claimTx.tx,
+            claimTx.blockhash.lastValidBlockHeight > 0
+              ? { blockhash: claimTx.blockhash.blockhash, lastValidBlockHeight: claimTx.blockhash.lastValidBlockHeight }
+              : undefined,
+          );
+          txSignatures.push(sig);
+        }
+      } else {
+        // Fallback: no TransactionSender — collect serialized txs (unsigned)
+        log.warn('No TransactionSender configured — collecting serialized txs without signing');
+        for (const claimTx of claimTxs) {
+          txSignatures.push(claimTx.tx);
+        }
       }
     }
 
     const txSignature = txSignatures.length > 0 ? txSignatures[0] : 'no-tx';
 
     log.info(
-      { totalSol, txCount: txSignatures.length },
+      { claimedSol: cappedSol, txCount: txSignatures.length, capped: cappedSol < totalSol },
       'Claim transactions submitted',
     );
 
     return {
       success: true,
       data: {
-        claimedSol: totalSol,
+        claimedSol: cappedSol,
         claimTx: txSignature,
       },
     };

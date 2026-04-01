@@ -49,7 +49,7 @@ async function buildTestApp(
   const deps = {
     travelPassService,
     config: {
-      metadataBaseUrl: 'https://flightbrain.example.com',
+      metadataBaseUrl: 'https://travelswap.example.com',
     },
   } as unknown as RouteDeps;
 
@@ -86,8 +86,8 @@ describe('NFT Metadata Routes', () => {
       // Metaplex standard fields
       expect(body.name).toBe('TravelPass #1');
       expect(body.description).toContain('$25');
-      expect(body.image).toBe('https://flightbrain.example.com/api/nft/image/1');
-      expect(body.external_url).toBe('https://flightbrain.example.com/travel-pass/1');
+      expect(body.image).toBe('https://travelswap.example.com/api/nft/image/1');
+      expect(body.external_url).toBe('https://travelswap.example.com/travel-pass/1');
 
       // Attributes array with trait_type/value pairs
       expect(body.attributes).toBeInstanceOf(Array);

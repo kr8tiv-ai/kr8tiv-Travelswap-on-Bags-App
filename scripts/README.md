@@ -52,7 +52,7 @@ npx tsx scripts/create-collection.ts ./keypair.json
 ```
 
 Options:
-- `--name "Custom Name"` — collection name (default: "FlightBrain Travel Passes")
+- `--name "Custom Name"` — collection name (default: "TravelSwap Travel Passes")
 - `--uri https://...` — metadata URI (default: placeholder)
 - Second positional arg or `RPC_URL` env: custom RPC endpoint
 

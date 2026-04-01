@@ -1,5 +1,5 @@
 // ─── AuditService ──────────────────────────────────────────────
-// Append-only audit logging for FlightBrain pipeline runs.
+// Append-only audit logging for TravelSwap pipeline runs.
 // Pattern: factory function returning an object with query methods.
 // All writes are INSERT only — no UPDATE or DELETE.
 

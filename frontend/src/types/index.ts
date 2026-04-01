@@ -1,4 +1,4 @@
-// ─── FlightBrain Frontend Domain Types ─────────────────────────
+// ─── TravelSwap Frontend Domain Types ─────────────────────────
 // Mirrored from backend/src/types/index.ts — JSON shapes only.
 
 export type FeeSourceType = 'CLAIMABLE_POSITIONS' | 'PARTNER_FEES';

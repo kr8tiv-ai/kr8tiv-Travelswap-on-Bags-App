@@ -64,8 +64,23 @@ export async function swapPhase(ctx: PhaseContext): Promise<PhaseResult> {
       ctx.strategy.ownerWallet,
     );
 
-    // In real mode we would sign and send the transaction here.
-    const txSignature = swapTxResult.swapTransaction;
+    let txSignature: string;
+
+    if (ctx.transactionSender) {
+      // Sign and send the swap transaction on-chain
+      // SwapTransaction has lastValidBlockHeight but no blockhash —
+      // TransactionSender will fetch a fresh blockhash internally.
+      txSignature = await ctx.transactionSender.signAndSend(
+        swapTxResult.swapTransaction,
+        swapTxResult.lastValidBlockHeight > 0
+          ? { blockhash: '', lastValidBlockHeight: swapTxResult.lastValidBlockHeight }
+          : undefined,
+      );
+    } else {
+      // Fallback: no TransactionSender — return serialized tx (unsigned)
+      log.warn('No TransactionSender configured — returning serialized swap tx without signing');
+      txSignature = swapTxResult.swapTransaction;
+    }
 
     log.info({ swappedUsdc, txSignature: txSignature.slice(0, 16) + '...' }, 'Swap transaction submitted');
 

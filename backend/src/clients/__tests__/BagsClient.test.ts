@@ -132,7 +132,7 @@ function makeSdkTradeQuoteResponse(overrides = {}): Record<string, unknown> {
   };
 }
 
-function makeFlightBrainQuote(overrides = {}): TradeQuote {
+function makeTravelSwapQuote(overrides = {}): TradeQuote {
   return {
     requestId: 'req-123',
     contextSlot: 42,
@@ -210,7 +210,7 @@ describe('BagsClient', () => {
   // ─── getClaimablePositions ─────────────────────────────────
 
   describe('getClaimablePositions()', () => {
-    it('maps SDK DBC positions to FlightBrain ClaimablePosition[]', async () => {
+    it('maps SDK DBC positions to TravelSwap ClaimablePosition[]', async () => {
       const sdkPositions = [makeSdkDbcPosition()];
       mockGetAllClaimablePositions.mockResolvedValueOnce(sdkPositions);
 
@@ -272,7 +272,7 @@ describe('BagsClient', () => {
   // ─── getClaimTransactions ──────────────────────────────────
 
   describe('getClaimTransactions()', () => {
-    it('maps SDK Transaction[] to FlightBrain ClaimTransaction[]', async () => {
+    it('maps SDK Transaction[] to TravelSwap ClaimTransaction[]', async () => {
       const mockTx = {
         serialize: vi.fn().mockReturnValue(Buffer.from('mock-tx-bytes')),
         recentBlockhash: 'blockhash-abc',
@@ -303,7 +303,7 @@ describe('BagsClient', () => {
   // ─── getTradeQuote ─────────────────────────────────────────
 
   describe('getTradeQuote()', () => {
-    it('maps SDK TradeQuoteResponse to FlightBrain TradeQuote', async () => {
+    it('maps SDK TradeQuoteResponse to TravelSwap TradeQuote', async () => {
       const sdkQuote = makeSdkTradeQuoteResponse();
       mockGetQuote.mockResolvedValueOnce(sdkQuote);
 
@@ -354,7 +354,7 @@ describe('BagsClient', () => {
   // ─── createSwapTransaction ─────────────────────────────────
 
   describe('createSwapTransaction()', () => {
-    it('maps SDK result to FlightBrain SwapTransaction', async () => {
+    it('maps SDK result to TravelSwap SwapTransaction', async () => {
       const mockVersionedTx = {
         serialize: vi.fn().mockReturnValue(new Uint8Array([1, 2, 3, 4])),
       };
@@ -365,7 +365,7 @@ describe('BagsClient', () => {
         prioritizationFeeLamports: 5000,
       });
 
-      const quote = makeFlightBrainQuote();
+      const quote = makeTravelSwapQuote();
       const result = await client.createSwapTransaction(quote, VALID_WALLET);
 
       expect(result.swapTransaction).toBe(Buffer.from(new Uint8Array([1, 2, 3, 4])).toString('base64'));
@@ -385,7 +385,7 @@ describe('BagsClient', () => {
         prioritizationFeeLamports: 0,
       });
 
-      const quote = makeFlightBrainQuote();
+      const quote = makeTravelSwapQuote();
       await client.createSwapTransaction(quote, VALID_WALLET);
 
       const calledWith = mockCreateSwapTransaction.mock.calls[0][0];
@@ -625,7 +625,7 @@ describe('mapSdkPositionToClaimable', () => {
 });
 
 describe('mapSdkQuoteToTradeQuote', () => {
-  it('maps full SDK quote to FlightBrain TradeQuote', () => {
+  it('maps full SDK quote to TravelSwap TradeQuote', () => {
     const sdkQuote = {
       requestId: 'req-1',
       contextSlot: 100,

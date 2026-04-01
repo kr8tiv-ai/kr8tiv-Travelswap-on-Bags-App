@@ -17,11 +17,11 @@
 [![Solana](https://img.shields.io/badge/Solana-Mainnet-9945FF?style=flat-square&logo=solana&logoColor=white)](https://solana.com)
 [![Bags.fm](https://img.shields.io/badge/Bags.fm-App%20Store-000000?style=flat-square)](https://bags.fm)
 [![TravelSwap](https://img.shields.io/badge/TravelSwap.xyz-Exclusive-00D4AA?style=flat-square)](https://travelswap.xyz)
-[![kr8tiv](https://img.shields.io/badge/kr8tiv.ai-Token%20Holders-ff6b35?style=flat-square)](https://kr8tiv.ai)
+[![kr8tiv](https://img.shields.io/badge/kr8tiv.ai-Any%20Token-ff6b35?style=flat-square)](https://kr8tiv.ai)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-22-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
-[![Tests](https://img.shields.io/badge/Tests-777%20passing-brightgreen?style=flat-square)](./backend)
+[![Tests](https://img.shields.io/badge/Tests-886%20passing-brightgreen?style=flat-square)](./backend)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](./LICENSE)
 
 <br />
@@ -49,7 +49,7 @@
 
 **kr8tiv TravelSwap on Bags** converts Bags.fm trading fees into real-world travel — automatically. A 5-phase autonomous pipeline claims accrued SOL from fee vaults, swaps to USDC, distributes across token holders by configurable rules, and delivers travel value exclusively through [TravelSwap.xyz](https://travelswap.xyz) gift cards via CoinVoyage payment processing.
 
-> **Built for [kr8tiv](https://kr8tiv.ai) token holders.** Every fee generated on Bags.fm flows back to the community as travel credits. No out-of-pocket spending. Hold $kr8tiv, earn flights.
+> **Works with any Bags.fm token.** Token creators deploy a strategy for their community — every fee generated from trading flows back to holders as travel credits. No out-of-pocket spending. Hold the token, earn flights. Built by [kr8tiv](https://kr8tiv.ai), open to every token on the platform.
 
 All travel spending flows through TravelSwap — a single partner ecosystem from fee claim to gift card delivery. Duffel flight search is available in sandbox mode for reference pricing and itinerary planning.
 
@@ -60,7 +60,7 @@ All travel spending flows through TravelSwap — a single partner ecosystem from
 │                                                                                 │
 │   ┌──────────────┐    ┌──────────┐    ┌──────────┐    ┌──────────────────────┐ │
 │   │  Bags.fm     │    │  Claim   │    │  Swap    │    │  Distribute USDC    │ │
-│   │  Trading     │───→│  SOL     │───→│  to USDC │───→│  to kr8tiv holders  │ │
+│   │  Trading     │───→│  SOL     │───→│  to USDC │───→│  to token holders   │ │
 │   │  Fees        │    │  Fees    │    │          │    │  by strategy rules  │ │
 │   └──────────────┘    └──────────┘    └──────────┘    └─────────┬────────────┘ │
 │          ↑                                                       │              │
@@ -76,15 +76,15 @@ All travel spending flows through TravelSwap — a single partner ecosystem from
 
 <br />
 
-### The kr8tiv Ecosystem
+### Built by kr8tiv — Works with Any Token
 
 | Project | What It Does | Links |
 |---------|-------------|-------|
-| **kr8tiv TravelSwap** | This repo — DeFi-to-travel engine for kr8tiv holders | [GitHub](https://github.com/kr8tiv-ai/kr8tiv-Travelswap-on-Bags-App) |
-| **PinkBrain Router** | Similar autonomous fee pipeline (different token) | [GitHub](https://github.com/kr8tiv-ai/PinkBrain-Router) |
+| **kr8tiv TravelSwap** | This repo — DeFi-to-travel engine for **any Bags.fm token** | [GitHub](https://github.com/kr8tiv-ai/kr8tiv-Travelswap-on-Bags-App) |
+| **PinkBrain Router** | Autonomous fee pipeline (similar architecture) | [GitHub](https://github.com/kr8tiv-ai/PinkBrain-Router) |
 | **PinkBrain LP** | LP management and compounding engine | [GitHub](https://github.com/kr8tiv-ai/PinkBrain-lp) |
 
-> All projects are built by the [kr8tiv-ai](https://github.com/kr8tiv-ai) org. Benefits from kr8tiv TravelSwap flow exclusively to **$kr8tiv token holders** — learn more at [kr8tiv.ai](https://kr8tiv.ai).
+> Built by the [kr8tiv-ai](https://github.com/kr8tiv-ai) org. TravelSwap is **token-agnostic** — any token creator on Bags.fm can deploy a strategy and convert their community's trading fees into travel. Learn more at [kr8tiv.ai](https://kr8tiv.ai).
 
 ---
 
@@ -620,7 +620,7 @@ docker-compose up --build
 | `NODE_ENV` | `production` | Environment |
 | `LOG_LEVEL` | `info` | Pino log level |
 | `DATABASE_URL` | — | PostgreSQL connection (uses PG when set) |
-| `DATABASE_PATH` | `./data/flightbrain.db` | SQLite fallback path |
+| `DATABASE_PATH` | `./data/travelswap.db` | SQLite fallback path |
 | `CRON_EXPRESSION` | `0 */6 * * *` | Pipeline schedule (every 6h) |
 
 </details>
@@ -642,7 +642,7 @@ npx vitest run
 npx vitest run --reporter=verbose
 ```
 
-**777 tests across 42 test files** — comprehensive coverage of every system layer:
+**886 tests across 48 test files** — comprehensive coverage of every system layer:
 
 | Category | Tests | Coverage |
 |----------|:-----:|----------|
@@ -776,8 +776,8 @@ All 7 external API clients inherit resilience automatically via `ResilientClient
 │                    │   kr8tiv TravelSwap │                               │
 │                    │   Pipeline Engine    │                               │
 │                    │                     │                               │
-│                    │   777 tests         │                               │
-│                    │   42 test files     │                               │
+│                    │   886 tests         │                               │
+│                    │   48 test files     │                               │
 │                    │   12 migrations     │                               │
 │                    │   26+ API endpoints │                               │
 │                    └─────────────────────┘                               │
@@ -800,7 +800,7 @@ npm install && cd backend && npm install && cd ../frontend && npm install && cd 
 cd backend && npm run build && cd ..
 npx vitest run
 
-# All 777 tests must pass before submitting
+# All 886 tests must pass before submitting
 ```
 
 ---
@@ -827,7 +827,7 @@ npx vitest run
 
 Built by [kr8tiv-ai](https://github.com/kr8tiv-ai) &nbsp;&middot;&nbsp; Powered by [Bags.fm](https://bags.fm) &nbsp;&middot;&nbsp; Travel via [TravelSwap.xyz](https://travelswap.xyz)
 
-**Hold $kr8tiv. Earn flights. Travel the world.**
+**Hold any token. Earn flights. Travel the world.**
 
 [kr8tiv.ai](https://kr8tiv.ai)
 

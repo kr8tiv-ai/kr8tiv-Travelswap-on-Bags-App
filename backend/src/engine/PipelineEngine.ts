@@ -97,6 +97,7 @@ export function createPipelineEngine(deps: PipelineDeps): PipelineEngine {
     bitrefillClient,
     nftMintClient,
     travelPassService,
+    transactionSender,
   } = deps;
 
   // Injectable delay for testing — avoids real sleeps in tests
@@ -167,6 +168,7 @@ export function createPipelineEngine(deps: PipelineDeps): PipelineEngine {
         ...(bitrefillClient ? { bitrefillClient } : {}),
         ...(nftMintClient ? { nftMintClient } : {}),
         ...(travelPassService ? { travelPassService } : {}),
+        ...(transactionSender ? { transactionSender } : {}),
         auditService,
         executionPolicy,
       };

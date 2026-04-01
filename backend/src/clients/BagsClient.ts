@@ -59,7 +59,7 @@ function isClientError(err: unknown): boolean {
   return false;
 }
 
-// ─── Type Mapping: SDK → FlightBrain ───────────────────────────
+// ─── Type Mapping: SDK → TravelSwap ───────────────────────────
 
 export function mapSdkPositionToClaimable(sdkPos: SdkClaimablePosition): ClaimablePosition {
   // All variants share: baseMint, virtualPool, totalClaimableLamportsUserShare, isCustomFeeVault
@@ -414,7 +414,7 @@ export function createBagsClient(config: BagsClientConfig): BagsAdapter {
   ): Promise<SwapTransaction> {
     validateWalletAddress(userPublicKey);
 
-    // Map FlightBrain TradeQuote back to SDK TradeQuoteResponse format
+    // Map TravelSwap TradeQuote back to SDK TradeQuoteResponse format
     const sdkQuoteResponse: SdkTradeQuoteResponse = {
       requestId: quoteResponse.requestId,
       contextSlot: quoteResponse.contextSlot,

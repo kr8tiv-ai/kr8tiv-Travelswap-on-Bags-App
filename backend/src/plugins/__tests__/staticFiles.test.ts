@@ -5,7 +5,7 @@ import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { staticFilesPlugin } from '../staticFiles.js';
 
-const TEST_STATIC_DIR = join(tmpdir(), `flightbrain-static-test-${process.pid}`);
+const TEST_STATIC_DIR = join(tmpdir(), `travelswap-static-test-${process.pid}`);
 
 const INDEX_HTML = `<!DOCTYPE html>
 <html><head><title>Test SPA</title></head>

@@ -2,15 +2,15 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: flightbrain
-      POSTGRES_USER: flightbrain
-      POSTGRES_PASSWORD: flightbrain_dev
+      POSTGRES_DB: travelswap
+      POSTGRES_USER: travelswap
+      POSTGRES_PASSWORD: travelswap_dev
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U flightbrain -d flightbrain"]
+      test: ["CMD-SHELL", "pg_isready -U travelswap -d travelswap"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -26,7 +26,7 @@ services:
     env_file: .env.docker
     environment:
       # ── Database ──
-      DATABASE_URL: postgresql://flightbrain:flightbrain_dev@postgres:5432/flightbrain
+      DATABASE_URL: postgresql://travelswap:travelswap_dev@postgres:5432/travelswap
 
       # ── Required Secrets (provide via .env or override) ──
       BAGS_API_KEY: ${BAGS_API_KEY:-<your-bags-api-key>}
@@ -58,7 +58,7 @@ services:
       GIFT_CARD_DAILY_LIMIT: ${GIFT_CARD_DAILY_LIMIT:-20}
       GIFT_CARD_MAX_DENOMINATION: ${GIFT_CARD_MAX_DENOMINATION:-200}
       BALANCE_MAX_USD: ${BALANCE_MAX_USD:-1000}
-      TRAVELSWAP_PARTNER_REF: ${TRAVELSWAP_PARTNER_REF:-FLIGHTBRAIN}
+      TRAVELSWAP_PARTNER_REF: ${TRAVELSWAP_PARTNER_REF:-TRAVELSWAP}
 
       # ── Scheduling ──
       CRON_EXPRESSION: ${CRON_EXPRESSION:-0 */6 * * *}

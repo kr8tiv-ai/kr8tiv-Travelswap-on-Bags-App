@@ -1,5 +1,5 @@
 // ─── Layout Shell ──────────────────────────────────────────────
-// Dark-themed tabbed navigation shell for the FlightBrain dashboard.
+// Dark-themed tabbed navigation shell for the TravelSwap dashboard.
 // Responsive: horizontal tabs on md+, hamburger drawer on mobile.
 
 import { useState } from 'react';

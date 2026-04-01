@@ -10,6 +10,7 @@ describe('Config', () => {
     process.env.HELIUS_API_KEY = 'test-helius-key';
     process.env.API_AUTH_TOKEN = 'test-auth-token';
     process.env.GIFT_CARD_ENCRYPTION_KEY = 'test-encryption-key';
+    process.env.DRY_RUN = 'true';
     process.env.NODE_ENV = 'test';
   }
 
@@ -69,7 +70,7 @@ describe('Config', () => {
       setValidEnv();
       const config = loadConfig();
 
-      expect(config.dryRun).toBe(false);
+      expect(config.dryRun).toBe(true);
       expect(config.executionKillSwitch).toBe(false);
       expect(config.maxDailyRuns).toBe(4);
       expect(config.giftCardDailyLimit).toBe(20);

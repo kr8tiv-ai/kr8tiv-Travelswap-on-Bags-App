@@ -28,7 +28,7 @@ const listing = fs.existsSync(listingPath) ? fs.readFileSync(listingPath, 'utf8'
 
 check('docs/APP_STORE_LISTING.md exists', fs.existsSync(listingPath));
 check('docs/screenshots/ directory exists', fs.existsSync(path.join('docs', 'screenshots')));
-check('Listing has "FlightBrain"', listing.includes('FlightBrain'));
+check('Listing has "TravelSwap"', listing.includes('TravelSwap'));
 check('Listing has "Features"', listing.includes('Features'));
 check('Listing has description', listing.includes('Description') || listing.includes('description'));
 check('Listing has screenshot references', listing.includes('screenshots/'));

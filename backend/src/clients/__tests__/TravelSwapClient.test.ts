@@ -7,12 +7,12 @@ describe('TravelSwapClient', () => {
   // ─── getBookingUrl() ─────────────────────────────────────────
 
   describe('getBookingUrl()', () => {
-    it('generates booking URL with default FLIGHTBRAIN ref', () => {
+    it('generates booking URL with default TRAVELSWAP ref', () => {
       const client = createTravelSwapClient();
       const url = client.getBookingUrl(WALLET);
 
       expect(url).toContain('https://travelswap.xyz/book?');
-      expect(url).toContain('ref=FLIGHTBRAIN');
+      expect(url).toContain('ref=TRAVELSWAP');
       expect(url).toContain(`wallet=${WALLET}`);
     });
 
@@ -21,7 +21,7 @@ describe('TravelSwapClient', () => {
       const url = client.getBookingUrl(WALLET);
 
       expect(url).toContain('ref=CUSTOM_PARTNER');
-      expect(url).not.toContain('FLIGHTBRAIN');
+      expect(url).not.toContain('TRAVELSWAP');
     });
 
     it('includes wallet address in URL', () => {
@@ -41,7 +41,7 @@ describe('TravelSwapClient', () => {
       const url = client.getGiftCardUrl(50, WALLET);
 
       expect(url).toContain('https://travelswap.xyz/gift-card?');
-      expect(url).toContain('ref=FLIGHTBRAIN');
+      expect(url).toContain('ref=TRAVELSWAP');
       expect(url).toContain('denomination=50');
       expect(url).toContain(`wallet=${WALLET}`);
     });
@@ -77,11 +77,11 @@ describe('TravelSwapClient', () => {
   // ─── getHotelSearchUrl() ──────────────────────────────────────
 
   describe('getHotelSearchUrl()', () => {
-    it('generates search URL with default FLIGHTBRAIN ref and no destination', () => {
+    it('generates search URL with default TRAVELSWAP ref and no destination', () => {
       const client = createTravelSwapClient();
       const url = client.getHotelSearchUrl();
 
-      expect(url).toBe('https://travelswap.xyz/search?ref=FLIGHTBRAIN');
+      expect(url).toBe('https://travelswap.xyz/search?ref=TRAVELSWAP');
     });
 
     it('includes destination param when provided', () => {
@@ -89,7 +89,7 @@ describe('TravelSwapClient', () => {
       const url = client.getHotelSearchUrl('Cancun');
 
       const parsed = new URL(url);
-      expect(parsed.searchParams.get('ref')).toBe('FLIGHTBRAIN');
+      expect(parsed.searchParams.get('ref')).toBe('TRAVELSWAP');
       expect(parsed.searchParams.get('destination')).toBe('Cancun');
     });
 
@@ -108,7 +108,7 @@ describe('TravelSwapClient', () => {
       const url = client.getHotelSearchUrl('Tokyo');
 
       expect(url).toContain('ref=HOTEL_PARTNER');
-      expect(url).not.toContain('FLIGHTBRAIN');
+      expect(url).not.toContain('TRAVELSWAP');
     });
   });
 

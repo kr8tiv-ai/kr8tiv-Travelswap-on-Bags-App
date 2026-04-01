@@ -202,8 +202,8 @@ describe('PipelineEngine', () => {
     };
 
     mockTravelSwapClient = {
-      getBookingUrl: vi.fn().mockReturnValue('https://travelswap.xyz/book?ref=FLIGHTBRAIN'),
-      getGiftCardUrl: vi.fn().mockReturnValue('https://travelswap.xyz/gift-card?ref=FLIGHTBRAIN'),
+      getBookingUrl: vi.fn().mockReturnValue('https://travelswap.xyz/book?ref=TRAVELSWAP'),
+      getGiftCardUrl: vi.fn().mockReturnValue('https://travelswap.xyz/gift-card?ref=TRAVELSWAP'),
     };
 
     // Create a strategy for the tests

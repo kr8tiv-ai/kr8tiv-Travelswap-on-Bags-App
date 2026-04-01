@@ -1,5 +1,5 @@
 // ─── ExecutionPolicy ───────────────────────────────────────────
-// Safety controls for FlightBrain pipeline execution.
+// Safety controls for TravelSwap pipeline execution.
 // Enforces kill switch, dry-run mode, daily limits, and balance caps.
 
 import type { Config } from '../config/index.js';

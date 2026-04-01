@@ -1,4 +1,4 @@
-// FlightBrain — Fee-to-travel-credits engine for Bags.fm
+// TravelSwap — Fee-to-travel-credits engine for Bags.fm
 
 // ── Config & Logger ──
 export { getConfig, loadConfig, resetConfig } from './config/index.js';

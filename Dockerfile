@@ -51,10 +51,19 @@ COPY --from=builder /app/backend/dist/ backend/dist/
 # Compiled frontend from builder
 COPY --from=builder /app/frontend/dist/ frontend/dist/
 
+# Non-root user for security
+RUN addgroup --system appuser && adduser --system --ingroup appuser appuser
+RUN chown -R appuser:appuser /app
+
 # Runtime configuration
 ENV NODE_ENV=production
 ENV STATIC_DIR=/app/frontend/dist
 
 EXPOSE 3001
+
+USER appuser
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost:3001/health/live || exit 1
 
 CMD ["node", "backend/dist/main.js"]

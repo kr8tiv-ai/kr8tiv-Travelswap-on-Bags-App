@@ -1,4 +1,4 @@
-// ─── FlightBrain Domain Types ──────────────────────────────────
+// ─── TravelSwap Domain Types ──────────────────────────────────
 // Adapted from PinkBrain Router types for the fee-to-travel-credits pipeline.
 // Extended with Duffel flight search types for M002.
 
@@ -144,7 +144,7 @@ export type GiftCardStatus = 'PENDING' | 'PURCHASED' | 'DELIVERED' | 'REDEEMED' 
 
 export type StrategyStatus = 'ACTIVE' | 'PAUSED' | 'ERROR';
 
-/** FlightBrain 5-phase state machine — simplified from Router's 7-phase */
+/** TravelSwap 5-phase state machine — simplified from Router's 7-phase */
 export type RunState =
   | 'PENDING'
   | 'CLAIMING'

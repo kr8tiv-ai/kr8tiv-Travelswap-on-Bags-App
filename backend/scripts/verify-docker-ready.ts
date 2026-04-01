@@ -62,7 +62,7 @@ function record(name: string, passed: boolean, detail: string): void {
 // ── Main ──────────────────────────────────────────────────────
 
 async function verify(): Promise<void> {
-  console.log('\n🔍 FlightBrain Docker-Ready Verification\n');
+  console.log('\n🔍 TravelSwap Docker-Ready Verification\n');
 
   // ── 1. Config ──
   console.log('── Step 1: Config validation');

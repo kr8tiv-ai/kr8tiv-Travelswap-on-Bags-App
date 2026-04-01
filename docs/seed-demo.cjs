@@ -1,10 +1,10 @@
-// Seed script — inserts demo data into FlightBrain SQLite for screenshots.
+// Seed script — inserts demo data into TravelSwap SQLite for screenshots.
 // Usage: node docs/seed-demo.cjs <db-path>
 
 const { DatabaseSync } = require('node:sqlite');
 const path = require('path');
 
-const dbPath = process.argv[2] || path.join(__dirname, '..', 'flightbrain-demo.db');
+const dbPath = process.argv[2] || path.join(__dirname, '..', 'travelswap-demo.db');
 const db = new DatabaseSync(dbPath);
 
 db.exec('PRAGMA journal_mode=WAL');

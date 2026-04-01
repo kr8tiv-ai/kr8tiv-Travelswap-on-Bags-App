@@ -10,7 +10,7 @@ import { readFileSync } from 'fs';
 // ─── CLI ───────────────────────────────────────────────────────
 
 const SOLANA_DEVNET = 'https://api.devnet.solana.com';
-const DEFAULT_NAME = 'FlightBrain Travel Passes';
+const DEFAULT_NAME = 'TravelSwap Travel Passes';
 const DEFAULT_URI = 'https://arweave.net/placeholder-collection-metadata';
 
 function usage(): never {
